@@ -76,7 +76,7 @@ namespace TensorflowSharpCore.LearnApi.Layers
             using (var scope = graph.WithScope(Name))
             {
                 _kernelWeights = graph.Const(new TFTensor(Weights), DataType);
-                Output = _convolutionalOutput = graph.Conv2D(previousLayer.Output, _kernelWeights, new long[] { 1, Stride.Width, Stride.Height, 1 }, Padding.ToString().ToUpper());
+                Output = _convolutionalOutput = graph.Conv2D(previousLayer.Output, _kernelWeights, new long[] { 1, Stride.Height, Stride.Width, 1 }, Padding.ToString().ToUpper());
                 if (AddBias)
                 {
                     _biasWeights = graph.Const(new TFTensor(Biases), DataType, "Bias");

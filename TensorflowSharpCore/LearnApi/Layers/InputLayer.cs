@@ -36,7 +36,7 @@
 
         internal void ConstructLayer(TFGraph graph)
         {
-            Output = graph.Placeholder(TFDataType.Float, new TFShape(Batch, Y, X, C));
+            Output = graph.Placeholder(TFDataType.Float, new TFShape(Batch, X, Y, C));
         }
     }
 }

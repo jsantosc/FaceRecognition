@@ -54,19 +54,19 @@ namespace FaceRecognition.UnitTests.TensorflowSharpCore
                 var prelu1 = obj.Single(o => o.Name == "PReLU1");
                 var prelu2 = obj.Single(o => o.Name == "PReLU2");
                 var prelu3 = obj.Single(o => o.Name == "PReLU3");
-                network.AddInput("data", TfConstants.NullDimension, TfConstants.NullDimension, TfConstants.NullDimension, 1)
-                    .ContinueWithConv2D("conv1", (3, 3, 10), (1, 1), PaddingType.Valid, conv1.Weights, biases: conv1.Biases)
+                network.AddInput("data", TfConstants.NullDimension, TfConstants.NullDimension, 3, 1)
+                    .ContinueWithConv2D("conv1", (3, 3, 10), (1, 1), PaddingType.Valid, conv1.Weights, biases: conv1.Biases, addReLu: false)
                     .ContinueWithPRelu("PReLU1", prelu1.Alpha)
-                    .ContinueWithConv2D("conv2", (3, 3, 16), (1, 1), PaddingType.Same, conv2.Weights, biases: conv2.Biases)
+                    .ContinueWithConv2D("conv2", (3, 3, 16), (1, 1), PaddingType.Same, conv2.Weights, biases: conv2.Biases, addReLu: false)
                     .ContinueWithPRelu("PReLU2", prelu2.Alpha)
-                    .ContinueWithConv2D("conv3", (3, 3, 32), (1, 1), PaddingType.Same, conv3.Weights, biases: conv3.Biases)
+                    .ContinueWithConv2D("conv3", (3, 3, 32), (1, 1), PaddingType.Same, conv3.Weights, biases: conv3.Biases, addReLu: false)
                     .ContinueWithPRelu("PReLU3", prelu3.Alpha)
                     .ContinueWithConv2D("conv4-1", (1, 1, 2), (1, 1), PaddingType.Same, conv41.Weights, biases: conv41.Biases)
                     .ContinueWithMultidimensionalSoftMax("prob1", 3);
                 network.FromLayer("PReLU3")
                     .ContinueWithConv2D("conv4-2", (1, 1, 4), (1, 1), PaddingType.Same, conv42.Weights, biases: conv42.Biases);
 
-                float[,,,] inputValues = new float[100, 100, 1, 1];
+                float[,,,] inputValues = new float[1, 100, 100, 3];
 
                 var random = new Random();
                 for (int x = 0; x < 100; x++)
@@ -75,11 +75,11 @@ namespace FaceRecognition.UnitTests.TensorflowSharpCore
                     {
                         for (int z = 0; z < 3; z++)
                         {
-                            inputValues[x, y, z, 0] = (float)random.NextDouble() * 255;
+                            inputValues[0, x, y, z] = (float)random.NextDouble() * 255;
                         }
                     }
                 }
-                network.Run(new { data = inputValues }, new[] { "prob1" });
+                network.Run(new { data = inputValues }, new[] { "PReLU3" });
             }
         }
         public async Task LoadMtcnnRNetNetworkAsync()
