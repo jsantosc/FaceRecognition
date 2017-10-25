@@ -1,4 +1,4 @@
-﻿﻿//
+﻿//
 // TensorFlow.cs; Bindings to the TensorFlow C API for .NET
 // 
 // Authors:
@@ -15,6 +15,7 @@
 using System;
 using System.Runtime.InteropServices;
 using System.Text;
+using System.Globalization;
 using System.Linq;
 
 // We use this TF_Xxx as the native "TF_Xxx *" as those are opaque
@@ -31,7 +32,9 @@ using TF_Library = System.IntPtr;
 using TF_BufferPtr = System.IntPtr;
 
 using size_t = System.UIntPtr;
+using System.Numerics;
 using System.Collections.Generic;
+using System.Linq.Expressions;
 
 namespace TensorflowSharpCore
 {
@@ -39,7 +42,7 @@ namespace TensorflowSharpCore
     {
         public const string TensorFlowLibrary = "libtensorflow";
 
-        internal static string GetStr (this IntPtr x) => Marshal.PtrToStringAnsi (x);
+        internal static string GetStr(this IntPtr x) => Marshal.PtrToStringAnsi(x);
 
 
     }
@@ -47,57 +50,59 @@ namespace TensorflowSharpCore
     /// <summary>
     /// Contains TensorFlow fundamental methods and utility functions.
     /// </summary>
-    public static class TFCore {
-        [DllImport (NativeBinding.TensorFlowLibrary)]
-        static extern unsafe IntPtr TF_Version ();
+    public static class TFCore
+    {
+        [DllImport(NativeBinding.TensorFlowLibrary)]
+        static extern unsafe IntPtr TF_Version();
 
-        static TFCore ()
+        static TFCore()
         {
-            CheckSize ();
+            CheckSize();
         }
 
         /// <summary>
         /// Returns the version of the TensorFlow runtime in use.
         /// </summary>
         /// <value>The version.</value>
-        public static string Version => TF_Version ().GetStr ();
+        public static string Version => TF_Version().GetStr();
 
         // extern size_t TF_DataTypeSize (TF_DataType dt);
-        [DllImport (NativeBinding.TensorFlowLibrary)]
-        static extern IntPtr TF_DataTypeSize (TFDataType dt);
+        [DllImport(NativeBinding.TensorFlowLibrary)]
+        static extern IntPtr TF_DataTypeSize(TFDataType dt);
 
         /// <summary>
         /// Gets the size in bytes of the specified TensorFlow data type.
         /// </summary>
         /// <returns>The data type size.</returns>
         /// <param name="dt">Dt.</param>
-        public static long GetDataTypeSize (TFDataType dt) => (long)TF_DataTypeSize (dt);
+        public static long GetDataTypeSize(TFDataType dt) => (long)TF_DataTypeSize(dt);
 
         // extern TF_Buffer * TF_GetAllOpList ();
-        [DllImport (NativeBinding.TensorFlowLibrary)]
-        static extern unsafe IntPtr TF_GetAllOpList ();
+        [DllImport(NativeBinding.TensorFlowLibrary)]
+        static extern unsafe IntPtr TF_GetAllOpList();
 
         /// <summary>
         /// Retrieves the ProtocolBuffer describing all of the available operations in
         /// the TensorFlow library in current use.
         /// </summary>
         /// <returns>The buffer contains a ProtocolBuffer encoded payload, you need a ProtocolBuffer reader to process the contents.</returns>
-        public static TFBuffer GetAllOpList ()
+        public static TFBuffer GetAllOpList()
         {
-            return new TFBuffer (TF_GetAllOpList ());
+            return new TFBuffer(TF_GetAllOpList());
         }
 
-        internal static void CheckSize ()
+        internal static void CheckSize()
         {
             unsafe
             {
-                if (sizeof (IntPtr) == 4) {
-                    Console.Error.WriteLine (
+                if (sizeof(IntPtr) == 4)
+                {
+                    Console.Error.WriteLine(
                         "The TensorFlow native libraries were compiled in 64 bit mode, you must run in 64 bit mode\n" +
                         "With Mono, do that with mono --arch=64 executable.exe, if using an IDE like MonoDevelop,\n" +
                         "Xamarin Studio or Visual Studio for Mac, Build/Compiler settings, make sure that " +
                         "\"Platform Target\" has x64 selected.");
-                    throw new Exception ();
+                    throw new Exception();
 
                 }
             }
@@ -127,22 +132,22 @@ namespace TensorflowSharpCore
         /// <value>The handle.</value>
         public IntPtr Handle => handle;
 
-        static TFDisposable ()
+        static TFDisposable()
         {
-            TFCore.CheckSize ();
+            TFCore.CheckSize();
         }
 
         /// <summary>
         /// Initializes a new instance of the <see cref="T:TensorFlow.TFDisposable"/> class.
         /// </summary>
-        public TFDisposable ()
+        public TFDisposable()
         { }
 
         /// <summary>
         /// Initializes a new instance of the <see cref="T:TensorFlow.TFDisposable"/> class
         /// from the handle that it will wrap.   
         /// </summary>
-        public TFDisposable (IntPtr handle)
+        public TFDisposable(IntPtr handle)
         {
             this.handle = handle;
         }
@@ -154,50 +159,52 @@ namespace TensorflowSharpCore
         /// Dispose method leaves the <see cref="T:TensorFlow.TFDisposable"/> in an unusable state. After
         /// calling Dispose, you must release all references to the <see cref="T:TensorFlow.TFDisposable"/> so
         /// the garbage collector can reclaim the memory that the <see cref="T:TensorFlow.TFDisposable"/> was occupying.</remarks>
-        public void Dispose ()
+        public void Dispose()
         {
-            Dispose (true);
-            GC.SuppressFinalize (this);
+            Dispose(true);
+            GC.SuppressFinalize(this);
         }
 
-        ~TFDisposable ()
+        ~TFDisposable()
         {
-            Dispose (false);
+            Dispose(false);
         }
 
         // Must be implemented in subclasses to dispose the unmanaged object, it does
         // not need to take care of zeroing out the handle, that is done by the Dispose
         // method inherited from TFDisposable
-        internal abstract void NativeDispose (IntPtr handle);
+        internal abstract void NativeDispose(IntPtr handle);
 
         /// <summary>
         /// Dispose the specified object
         /// </summary>
         /// <param name="disposing">If set to <c>true</c> it means that this method was called from Dispose, otherwise from the finalizer.</param>
-        public virtual void Dispose (bool disposing)
+        public virtual void Dispose(bool disposing)
         {
-            if (disposing) {
+            if (disposing)
+            {
                 if (handle != IntPtr.Zero)
-                    NativeDispose (handle);
+                    NativeDispose(handle);
                 handle = IntPtr.Zero;
             }
         }
 
-        internal static void ObjectDisposedException ()
+        internal static void ObjectDisposedException()
         {
-            throw new ObjectDisposedException ("The object was disposed");
+            throw new ObjectDisposedException("The object was disposed");
         }
     }
 
     /// <summary>
     /// TensorFlow Exception
     /// </summary>
-    public class TFException : Exception {
+    public class TFException : Exception
+    {
         /// <summary>
         /// Initializes a new instance of the <see cref="T:TensorFlow.TFException"/> class with a message.
         /// </summary>
         /// <param name="message">Message.</param>
-        public TFException (string message) : base (message) { }
+        public TFException(string message) : base(message) { }
     }
 
     /// <summary>
@@ -221,8 +228,8 @@ namespace TensorflowSharpCore
     public class TFStatus : TFDisposable
     {
         // extern TF_Status * TF_NewStatus ();
-        [DllImport (NativeBinding.TensorFlowLibrary)]
-        internal static extern unsafe TF_Status TF_NewStatus ();
+        [DllImport(NativeBinding.TensorFlowLibrary)]
+        internal static extern unsafe TF_Status TF_NewStatus();
 
         /// <summary>
         /// Per-thread global status that you can use if you do not need to create a new instance of this object.
@@ -233,75 +240,77 @@ namespace TensorflowSharpCore
         /// property to pass a TFStatus without having to allocate a new one.   The problem with this of course
         /// is that you risk having multiple parts of your code override this thread-global variable.
         /// </remarks>
-        [ThreadStatic] public static TFStatus Default = new TFStatus ();
+        [ThreadStatic] public static TFStatus Default = new TFStatus();
 
         /// <summary>
         /// Initializes a new instance of the <see cref="T:TensorFlow.TFStatus"/> class.
         /// </summary>
-        public TFStatus () : base (TF_NewStatus ())
+        public TFStatus() : base(TF_NewStatus())
         {
         }
 
         // extern void TF_DeleteStatus (TF_Status *);
-        [DllImport (NativeBinding.TensorFlowLibrary)]
-        internal static extern unsafe void TF_DeleteStatus (TF_Status status);
+        [DllImport(NativeBinding.TensorFlowLibrary)]
+        internal static extern unsafe void TF_DeleteStatus(TF_Status status);
 
-        internal override void NativeDispose (IntPtr handle)
+        internal override void NativeDispose(IntPtr handle)
         {
-            TF_DeleteStatus (handle);
+            TF_DeleteStatus(handle);
         }
 
 
         // extern void TF_SetStatus (TF_Status *s, TF_Code code, const char *msg);
-        [DllImport (NativeBinding.TensorFlowLibrary)]
-        static extern unsafe void TF_SetStatus (TF_Status s, TFCode code, string msg);
+        [DllImport(NativeBinding.TensorFlowLibrary)]
+        static extern unsafe void TF_SetStatus(TF_Status s, TFCode code, string msg);
 
         /// <summary>
         /// Sets the status code on this TFStatus.
         /// </summary>
         /// <param name="code">Code.</param>
         /// <param name="msg">Message.</param>
-        public void SetStatusCode (TFCode code, string msg)
+        public void SetStatusCode(TFCode code, string msg)
         {
-            TF_SetStatus (handle, code, msg);
+            TF_SetStatus(handle, code, msg);
         }
 
         // extern TF_Code TF_GetCode (const TF_Status *s);
-        [DllImport (NativeBinding.TensorFlowLibrary)]
-        internal static extern unsafe TFCode TF_GetCode (TF_Status s);
+        [DllImport(NativeBinding.TensorFlowLibrary)]
+        internal static extern unsafe TFCode TF_GetCode(TF_Status s);
 
         /// <summary>
         /// Gets the status code for the status code.
         /// </summary>
         /// <value>The status code as an enumeration.</value>
-        public TFCode StatusCode {
-            get {
+        public TFCode StatusCode
+        {
+            get
+            {
                 if (handle == IntPtr.Zero)
-                    throw new ObjectDisposedException ("TFStatus");
-                return TF_GetCode (handle);
+                    throw new ObjectDisposedException("TFStatus");
+                return TF_GetCode(handle);
             }
         }
 
         // extern const char * TF_Message (const TF_Status *s);
-        [DllImport (NativeBinding.TensorFlowLibrary)]
-        static extern unsafe IntPtr TF_Message (TF_Status s);
+        [DllImport(NativeBinding.TensorFlowLibrary)]
+        static extern unsafe IntPtr TF_Message(TF_Status s);
 
         /// <summary>
         /// Gets a human-readable status message.
         /// </summary>
         /// <value>The status message.</value>
-        public string StatusMessage => TF_Message (handle).GetStr ();
+        public string StatusMessage => TF_Message(handle).GetStr();
 
         /// <summary>
         /// Returns a <see cref="T:System.String"/> that represents the current <see cref="T:TensorFlow.TFStatus"/>.
         /// </summary>
         /// <returns>A <see cref="T:System.String"/> that represents the current <see cref="T:TensorFlow.TFStatus"/>.</returns>
-        public override string ToString ()
+        public override string ToString()
         {
             if (handle == IntPtr.Zero)
-                throw new ObjectDisposedException ("TFStatus");
-            
-            return string.Format ("[TFStatus: StatusCode={0}, StatusMessage={1}]", StatusCode, StatusMessage);
+                throw new ObjectDisposedException("TFStatus");
+
+            return string.Format("[TFStatus: StatusCode={0}, StatusMessage={1}]", StatusCode, StatusMessage);
         }
 
 
@@ -324,10 +333,10 @@ namespace TensorflowSharpCore
         /// You can use this method as a convenience to raise an exception after you
         /// invoke an operation if the operation did not succeed.
         /// </remarks>
-        public void Raise ()
+        public void Raise()
         {
-            if (TF_GetCode (handle) != TFCode.Ok)
-                throw new TFException (StatusMessage);
+            if (TF_GetCode(handle) != TFCode.Ok)
+                throw new TFException(StatusMessage);
         }
 
         // 
@@ -337,43 +346,45 @@ namespace TensorflowSharpCore
         // exception is raised.
         //
 
-        internal bool CheckMaybeRaise (TFStatus incomingStatus, bool last = true)
+        internal bool CheckMaybeRaise(TFStatus incomingStatus, bool last = true)
         {
-            if (incomingStatus == null) {
+            if (incomingStatus == null)
+            {
                 if (handle == IntPtr.Zero)
-                    Console.WriteLine ("oops");
-                if (StatusCode != TFCode.Ok) {
-                    var e = new TFException (StatusMessage);
+                    Console.WriteLine("oops");
+                if (StatusCode != TFCode.Ok)
+                {
+                    var e = new TFException(StatusMessage);
                     if (last)
-                        Dispose ();
+                        Dispose();
                     throw e;
                 }
                 if (last)
-                    Dispose ();
+                    Dispose();
                 return true;
             }
             return StatusCode == TFCode.Ok;
         }
 
-        internal static TFStatus Setup (TFStatus incoming)
+        internal static TFStatus Setup(TFStatus incoming)
         {
-            return incoming == null ? new TFStatus () : incoming;
+            return incoming == null ? new TFStatus() : incoming;
         }
     }
 
     internal class TFString
     {
         // extern size_t TF_StringEncode (const char *src, size_t src_len, char *dst, size_t dst_len, TF_Status *status);
-        [DllImport (NativeBinding.TensorFlowLibrary)]
-        internal static extern unsafe size_t TF_StringEncode (byte* src, size_t src_len, sbyte* dst, size_t dst_len, TF_Status status);
-        
+        [DllImport(NativeBinding.TensorFlowLibrary)]
+        internal static extern unsafe size_t TF_StringEncode(byte* src, size_t src_len, sbyte* dst, size_t dst_len, TF_Status status);
+
         // extern size_t TF_StringDecode (const char *src, size_t src_len, const char **dst, size_t *dst_len, TF_Status *status);
-        [DllImport (NativeBinding.TensorFlowLibrary)]
-        internal static extern unsafe size_t TF_StringDecode (sbyte* src, size_t src_len, sbyte** dst, size_t* dst_len, TF_Status status);
+        [DllImport(NativeBinding.TensorFlowLibrary)]
+        internal static extern unsafe size_t TF_StringDecode(sbyte* src, size_t src_len, sbyte** dst, size_t* dst_len, TF_Status status);
 
         // extern size_t TF_StringEncodedSize (size_t len);
-        [DllImport (NativeBinding.TensorFlowLibrary)]
-        internal static extern size_t TF_StringEncodedSize (size_t len);
+        [DllImport(NativeBinding.TensorFlowLibrary)]
+        internal static extern size_t TF_StringEncodedSize(size_t len);
     }
 
     /// <summary>
@@ -382,25 +393,25 @@ namespace TensorflowSharpCore
     public class TFSessionOptions : TFDisposable
     {
         // extern TF_SessionOptions * TF_NewSessionOptions ();
-        [DllImport (NativeBinding.TensorFlowLibrary)]
-        internal static extern unsafe TF_SessionOptions TF_NewSessionOptions ();
+        [DllImport(NativeBinding.TensorFlowLibrary)]
+        internal static extern unsafe TF_SessionOptions TF_NewSessionOptions();
 
         /// <summary>
         /// Initializes a new instance of the <see cref="T:TensorFlow.TFSessionOptions"/> class.
         /// </summary>
-        public TFSessionOptions () : base (TF_NewSessionOptions ()) { }
+        public TFSessionOptions() : base(TF_NewSessionOptions()) { }
 
         // extern void TF_DeleteSessionOptions (TF_SessionOptions *);
-        [DllImport (NativeBinding.TensorFlowLibrary)]
-        internal static extern unsafe void TF_DeleteSessionOptions (TF_SessionOptions options);
-        internal override void NativeDispose (IntPtr handle)
+        [DllImport(NativeBinding.TensorFlowLibrary)]
+        internal static extern unsafe void TF_DeleteSessionOptions(TF_SessionOptions options);
+        internal override void NativeDispose(IntPtr handle)
         {
-            TF_DeleteSessionOptions (handle);
+            TF_DeleteSessionOptions(handle);
         }
 
         // extern void TF_SetTarget (TF_SessionOptions *options, const char *target);
-        [DllImport (NativeBinding.TensorFlowLibrary)]
-        static extern unsafe void TF_SetTarget (TF_SessionOptions options, string target);
+        [DllImport(NativeBinding.TensorFlowLibrary)]
+        static extern unsafe void TF_SetTarget(TF_SessionOptions options, string target);
 
         /// <summary>
         /// Sets the target in options.
@@ -408,17 +419,17 @@ namespace TensorflowSharpCore
         /// <param name="target">target can be empty, a single entry, or a comma separated list of entries.
         /// Each entry is in one of the following formats: "local", ip:port, host:port.</param>
         /// 
-        public void SetTarget (string target)
+        public void SetTarget(string target)
         {
             if (handle == IntPtr.Zero)
-                ObjectDisposedException ();
-            
-            TF_SetTarget (handle, target);
+                ObjectDisposedException();
+
+            TF_SetTarget(handle, target);
         }
 
         // extern void TF_SetConfig (TF_SessionOptions *options, const void *proto, size_t proto_len, TF_Status *status);
-        [DllImport (NativeBinding.TensorFlowLibrary)]
-        static extern unsafe void TF_SetConfig (TF_SessionOptions options, IntPtr proto, size_t proto_len, TF_Status status);
+        [DllImport(NativeBinding.TensorFlowLibrary)]
+        static extern unsafe void TF_SetConfig(TF_SessionOptions options, IntPtr proto, size_t proto_len, TF_Status status);
 
         /// <summary>
         /// Sets the configuration information for the session.
@@ -429,15 +440,15 @@ namespace TensorflowSharpCore
         /// <remarks>
         /// The configuration option is a Protocol Buffer representing the tensorflow.ConfigProto
         /// </remarks>
-        public void SetConfig (IntPtr protoData, int length, TFStatus status = null)
+        public void SetConfig(IntPtr protoData, int length, TFStatus status = null)
         {
             if (handle == IntPtr.Zero)
-                ObjectDisposedException ();
+                ObjectDisposedException();
 
-            var cstatus = TFStatus.Setup (status);
+            var cstatus = TFStatus.Setup(status);
 
-            TF_SetConfig (handle, protoData, (UIntPtr)length, cstatus.handle);
-            cstatus.CheckMaybeRaise (status);
+            TF_SetConfig(handle, protoData, (UIntPtr)length, cstatus.handle);
+            cstatus.CheckMaybeRaise(status);
         }
 
     }
@@ -463,33 +474,33 @@ namespace TensorflowSharpCore
     public partial class TFGraph : TFDisposable
     {
         // extern TF_Graph * TF_NewGraph ();
-        [DllImport (NativeBinding.TensorFlowLibrary)]
-        static extern unsafe TF_Graph TF_NewGraph ();
+        [DllImport(NativeBinding.TensorFlowLibrary)]
+        static extern unsafe TF_Graph TF_NewGraph();
 
         /// <summary>
         /// Initializes a new instance of the <see cref="T:TensorFlow.TFGraph"/> class.
         /// </summary>
-        public TFGraph () : base (TF_NewGraph ())
+        public TFGraph() : base(TF_NewGraph())
         {
         }
 
-        internal TFGraph (IntPtr handle) : base (handle)
+        internal TFGraph(IntPtr handle) : base(handle)
         {
         }
 
         // extern void TF_DeleteGraph (TF_Graph *);
-        [DllImport (NativeBinding.TensorFlowLibrary)]
-        static extern unsafe void TF_DeleteGraph (TF_Graph graph);
-        internal override void NativeDispose (IntPtr handle)
+        [DllImport(NativeBinding.TensorFlowLibrary)]
+        static extern unsafe void TF_DeleteGraph(TF_Graph graph);
+        internal override void NativeDispose(IntPtr handle)
         {
-            TF_DeleteGraph (handle);
+            TF_DeleteGraph(handle);
         }
 
         // extern void TF_GraphSetTensorShape (TF_Graph *graph, TF_Output output, const int64_t *dims, const int num_dims, TF_Status *status);
-        [DllImport (NativeBinding.TensorFlowLibrary)]
-        static extern unsafe void TF_GraphSetTensorShape (TF_Graph graph, TFOutput output, long [] dims, int num_dims, TF_Status status);
-        [DllImport (NativeBinding.TensorFlowLibrary)]
-        static extern unsafe void TF_GraphSetTensorShape (TF_Graph graph, TFOutput output, IntPtr dims, int num_dims, TF_Status status);
+        [DllImport(NativeBinding.TensorFlowLibrary)]
+        static extern unsafe void TF_GraphSetTensorShape(TF_Graph graph, TFOutput output, long[] dims, int num_dims, TF_Status status);
+        [DllImport(NativeBinding.TensorFlowLibrary)]
+        static extern unsafe void TF_GraphSetTensorShape(TF_Graph graph, TFOutput output, IntPtr dims, int num_dims, TF_Status status);
 
         /// <summary>
         /// Sets the tensor shape of the tensor referenced by <paramref name="output"/> to the shape described by <paramref name="dims"/>.
@@ -497,36 +508,36 @@ namespace TensorflowSharpCore
         /// <param name="output">The tensor on which this method will operate in the graph.</param>
         /// <param name="dims">The tensor shape, specified as an array of dimensions.</param>
         /// <param name="status">Status buffer, if specified a status code will be left here, if not specified, a <see cref="T:TensorFlow.TFException"/> exception is raised if there is an error.</param>
-        public void SetTensorShape (TFOutput output, long [] dims, TFStatus status = null)
+        public void SetTensorShape(TFOutput output, long[] dims, TFStatus status = null)
         {
             if (handle == IntPtr.Zero)
-                ObjectDisposedException ();
+                ObjectDisposedException();
 
-            var cstatus = TFStatus.Setup (status);
+            var cstatus = TFStatus.Setup(status);
             if (dims == null)
-                TF_GraphSetTensorShape (handle, output, IntPtr.Zero, 0, cstatus.handle);
+                TF_GraphSetTensorShape(handle, output, IntPtr.Zero, 0, cstatus.handle);
             else
-                TF_GraphSetTensorShape (handle, output, dims, dims.Length, cstatus.handle);
-            cstatus.CheckMaybeRaise (status);
+                TF_GraphSetTensorShape(handle, output, dims, dims.Length, cstatus.handle);
+            cstatus.CheckMaybeRaise(status);
         }
 
         // extern int TF_GraphGetTensorNumDims (TF_Graph *graph, TF_Output output, TF_Status *status);
-        [DllImport (NativeBinding.TensorFlowLibrary)]
-        static extern unsafe int TF_GraphGetTensorNumDims (TF_Graph graph, TFOutput output, TF_Status status);
+        [DllImport(NativeBinding.TensorFlowLibrary)]
+        static extern unsafe int TF_GraphGetTensorNumDims(TF_Graph graph, TFOutput output, TF_Status status);
 
-        public int GetTensorNumDims (TFOutput output, TFStatus status = null)
+        public int GetTensorNumDims(TFOutput output, TFStatus status = null)
         {
             if (handle == IntPtr.Zero)
-                ObjectDisposedException ();
-            var cstatus = TFStatus.Setup (status);
-            var code = TF_GraphGetTensorNumDims (handle, output, cstatus.handle);
-            cstatus.CheckMaybeRaise (status);
+                ObjectDisposedException();
+            var cstatus = TFStatus.Setup(status);
+            var code = TF_GraphGetTensorNumDims(handle, output, cstatus.handle);
+            cstatus.CheckMaybeRaise(status);
             return code;
         }
 
         // extern void TF_GraphGetTensorShape (TF_Graph *graph, TF_Output output, int64_t *dims, int num_dims, TF_Status *status);
-        [DllImport (NativeBinding.TensorFlowLibrary)]
-        static extern unsafe void TF_GraphGetTensorShape (TF_Graph graph, TFOutput output, long [] dims, int num_dims, TF_Status status);
+        [DllImport(NativeBinding.TensorFlowLibrary)]
+        static extern unsafe void TF_GraphGetTensorShape(TF_Graph graph, TFOutput output, long[] dims, int num_dims, TF_Status status);
 
         /// <summary>
         /// Returns the shape of a tensor specified in <paramref name="output"/>.
@@ -535,48 +546,50 @@ namespace TensorflowSharpCore
         /// <returns>The tensor shape.    If the number of dimensions in the shape is unknown or the shape is, a scalar, the values in the array will be zero. Otherwise, each element of will be set corresponding to the size of the dimension. An  unknown dimension is represented by -1.</returns>
         /// <param name="output">The tensor that you want to look up.  </param>
         /// <param name="status">Status buffer, if specified a status code will be left here, if not specified, a <see cref="T:TensorFlow.TFException"/> exception is raised if there is an error.</param>
-        public long [] GetTensorShape (TFOutput output, TFStatus status = null)
+        public TFShape GetTensorShape(TFOutput output, TFStatus status = null)
         {
             if (handle == IntPtr.Zero)
-                ObjectDisposedException ();
-            var cstatus = TFStatus.Setup (status);
-            var n = TF_GraphGetTensorNumDims (handle, output, cstatus.handle);
-            if (!cstatus.CheckMaybeRaise (status, last: false))
-                return null;
-            
-            var dims = new long [n];
-            TF_GraphGetTensorShape (handle, output, dims, dims.Length, cstatus.handle);
-            cstatus.CheckMaybeRaise (status);
-            return dims;
+                ObjectDisposedException();
+            var cstatus = TFStatus.Setup(status);
+            var n = TF_GraphGetTensorNumDims(handle, output, cstatus.handle);
+            if (!cstatus.CheckMaybeRaise(status, last: false))
+                return TFShape.Unknown;
+            if (n == -1)
+                return TFShape.Unknown;
+
+            var dims = new long[n];
+            TF_GraphGetTensorShape(handle, output, dims, dims.Length, cstatus.handle);
+            cstatus.CheckMaybeRaise(status);
+            return new TFShape(dims);
         }
 
         // extern void TF_GraphToGraphDef (TF_Graph *graph, TF_Buffer *output_graph_def, TF_Status *status);
-        [DllImport (NativeBinding.TensorFlowLibrary)]
-        static extern unsafe void TF_GraphToGraphDef (TF_Graph graph, LLBuffer* output_graph_def, TF_Status status);
+        [DllImport(NativeBinding.TensorFlowLibrary)]
+        static extern unsafe void TF_GraphToGraphDef(TF_Graph graph, LLBuffer* output_graph_def, TF_Status status);
 
         /// <summary>
         /// Write out a serialized representation of the graph (as a GraphDef protocol buffer message) into <paramref name="outputGraphDef"/>.
         /// </summary>
         /// <param name="outputGraphDef">Target buffer where the graphs is serialized into.</param>
         /// <param name="status">Status buffer, if specified a status code will be left here, if not specified, a <see cref="T:TensorFlow.TFException"/> exception is raised if there is an error.</param>
-        public void ToGraphDef (TFBuffer outputGraphDef, TFStatus status = null)
+        public void ToGraphDef(TFBuffer outputGraphDef, TFStatus status = null)
         {
             if (handle == IntPtr.Zero)
-                ObjectDisposedException ();
+                ObjectDisposedException();
             if (outputGraphDef == null)
-                throw new ArgumentNullException (nameof (outputGraphDef));
+                throw new ArgumentNullException(nameof(outputGraphDef));
 
-            var cstatus = TFStatus.Setup (status);
+            var cstatus = TFStatus.Setup(status);
             unsafe
             {
-                TF_GraphToGraphDef (handle, outputGraphDef.LLBuffer, cstatus.handle);
+                TF_GraphToGraphDef(handle, outputGraphDef.LLBuffer, cstatus.handle);
             }
-            cstatus.CheckMaybeRaise (status);
+            cstatus.CheckMaybeRaise(status);
         }
 
         // extern void TF_GraphImportGraphDef (TF_Graph *graph, const TF_Buffer *graph_def, const TF_ImportGraphDefOptions *options, TF_Status *status);
-        [DllImport (NativeBinding.TensorFlowLibrary)]
-        static extern unsafe void TF_GraphImportGraphDef (TF_Graph graph, LLBuffer* graph_def, TF_ImportGraphDefOptions options, TF_Status status);
+        [DllImport(NativeBinding.TensorFlowLibrary)]
+        static extern unsafe void TF_GraphImportGraphDef(TF_Graph graph, LLBuffer* graph_def, TF_ImportGraphDefOptions options, TF_Status status);
 
         /// <summary>
         /// Import a serialized graph into this graph, using the specified prefix.
@@ -585,18 +598,19 @@ namespace TensorflowSharpCore
         /// <param name="graphDef">A buffer containing the serialized graph.</param>
         /// <param name="prefix">A prefix that will be prepended to names of nodes in the <paramref name="graphDef"/> when they are imported into the graph.</param>
         /// <param name="status">Status buffer, if specified a status code will be left here, if not specified, a <see cref="T:TensorFlow.TFException"/> exception is raised if there is an error.</param>
-        public void Import (TFBuffer graphDef, string prefix = "", TFStatus status = null)
+        public void Import(TFBuffer graphDef, string prefix = "", TFStatus status = null)
         {
             if (handle == IntPtr.Zero)
-                ObjectDisposedException ();
+                ObjectDisposedException();
             if (graphDef == null)
-                throw new ArgumentNullException (nameof (graphDef));
+                throw new ArgumentNullException(nameof(graphDef));
             if (prefix == null)
-                throw new ArgumentNullException (nameof (prefix));
+                throw new ArgumentNullException(nameof(prefix));
 
-            using (var options = new TFImportGraphDefOptions ()) {
-                options.SetPrefix (prefix);
-                Import (graphDef, options, status);
+            using (var options = new TFImportGraphDefOptions())
+            {
+                options.SetPrefix(prefix);
+                Import(graphDef, options, status);
             }
         }
 
@@ -607,21 +621,21 @@ namespace TensorflowSharpCore
         /// <param name="graphDef">A buffer containing the serialized graph.</param>
         /// <param name="options">Importing graph options.</param>
         /// <param name="status">Status buffer, if specified a status code will be left here, if not specified, a <see cref="T:TensorFlow.TFException"/> exception is raised if there is an error.</param>
-        public void Import (TFBuffer graphDef, TFImportGraphDefOptions options, TFStatus status = null)
+        public void Import(TFBuffer graphDef, TFImportGraphDefOptions options, TFStatus status = null)
         {
             if (handle == IntPtr.Zero)
-                ObjectDisposedException ();
+                ObjectDisposedException();
             if (graphDef == null)
-                throw new ArgumentNullException (nameof (graphDef));
+                throw new ArgumentNullException(nameof(graphDef));
             if (options == null)
-                throw new ArgumentNullException (nameof (options));
+                throw new ArgumentNullException(nameof(options));
 
-            var cstatus = TFStatus.Setup (status);
+            var cstatus = TFStatus.Setup(status);
             unsafe
             {
-                TF_GraphImportGraphDef (handle, graphDef.LLBuffer, options.handle, cstatus.handle);
+                TF_GraphImportGraphDef(handle, graphDef.LLBuffer, options.handle, cstatus.handle);
             }
-            cstatus.CheckMaybeRaise (status);
+            cstatus.CheckMaybeRaise(status);
         }
 
         /// <summary>
@@ -631,17 +645,18 @@ namespace TensorflowSharpCore
         /// <param name="buffer">A byte array containing the serialized graph.</param>
         /// <param name="prefix">A prefix that will be prepended to names of nodes in the graph when they are imported into the graph.</param>
         /// <param name="status">Status buffer, if specified a status code will be left here, if not specified, a <see cref="T:TensorFlow.TFException"/> exception is raised if there is an error.</param>		
-        public void Import (byte [] buffer, string prefix = "", TFStatus status = null)
+        public void Import(byte[] buffer, string prefix = "", TFStatus status = null)
         {
             if (handle == IntPtr.Zero)
-                ObjectDisposedException ();
+                ObjectDisposedException();
             if (buffer == null)
-                throw new ArgumentNullException (nameof (buffer));
+                throw new ArgumentNullException(nameof(buffer));
             if (prefix == null)
-                throw new ArgumentNullException (nameof (prefix));
-            using (var options = new TFImportGraphDefOptions ()) {
-                options.SetPrefix (prefix);
-                Import (buffer, options, status);
+                throw new ArgumentNullException(nameof(prefix));
+            using (var options = new TFImportGraphDefOptions())
+            {
+                options.SetPrefix(prefix);
+                Import(buffer, options, status);
             }
         }
 
@@ -652,57 +667,59 @@ namespace TensorflowSharpCore
         /// <param name="buffer">A byte array containing the serialized graph.</param>
         /// <param name="options">Importing graph options.</param>
         /// <param name="status">Status buffer, if specified a status code will be left here, if not specified, a <see cref="T:TensorFlow.TFException"/> exception is raised if there is an error.</param>
-        public void Import (byte [] buffer, TFImportGraphDefOptions options, TFStatus status = null)
+        public void Import(byte[] buffer, TFImportGraphDefOptions options, TFStatus status = null)
         {
             if (handle == IntPtr.Zero)
-                ObjectDisposedException ();
+                ObjectDisposedException();
             if (buffer == null)
-                throw new ArgumentNullException (nameof (buffer));
+                throw new ArgumentNullException(nameof(buffer));
             if (options == null)
-                throw new ArgumentNullException (nameof (options));
-            var cstatus = TFStatus.Setup (status);
-            using (var tb = new TFBuffer (buffer, 0, buffer.Length)) 
-                Import (tb, options, status);
-            
-            cstatus.CheckMaybeRaise (cstatus);
+                throw new ArgumentNullException(nameof(options));
+            var cstatus = TFStatus.Setup(status);
+            using (var tb = new TFBuffer(buffer, 0, buffer.Length))
+                Import(tb, options, status);
+
+            cstatus.CheckMaybeRaise(cstatus);
         }
 
         // extern TF_Operation * TF_GraphOperationByName (TF_Graph *graph, const char *oper_name);
-        [DllImport (NativeBinding.TensorFlowLibrary)]
-        static extern unsafe TF_Operation TF_GraphOperationByName (TF_Graph graph, string oper_name);
+        [DllImport(NativeBinding.TensorFlowLibrary)]
+        static extern unsafe TF_Operation TF_GraphOperationByName(TF_Graph graph, string oper_name);
 
         /// <summary>
         /// Gets the <see cref="T:TensorFlow.TFGraph"/> with the specified name, or null if the named operation does not exist in the graph.
         /// </summary>
         /// <param name="name">Name to lookup.</param>
-        public TFOperation this [string name] {
-            get {
+        public TFOperation this[string name]
+        {
+            get
+            {
                 if (handle == IntPtr.Zero)
-                    ObjectDisposedException ();
-                var h = TF_GraphOperationByName (handle, name);
+                    ObjectDisposedException();
+                var h = TF_GraphOperationByName(handle, name);
                 if (h == IntPtr.Zero)
                     return null;
-                return new TFOperation (this, h);
+                return new TFOperation(this, h);
             }
         }
 
         // extern TF_Operation * TF_GraphNextOperation (TF_Graph *graph, size_t *pos);
-        [DllImport (NativeBinding.TensorFlowLibrary)]
-        static extern unsafe TF_Operation TF_GraphNextOperation (TF_Graph graph, ref IntPtr token);
+        [DllImport(NativeBinding.TensorFlowLibrary)]
+        static extern unsafe TF_Operation TF_GraphNextOperation(TF_Graph graph, ref IntPtr token);
 
         /// <summary>
         /// Returns the enumerator that returns all the TFOperations in a graph.
         /// </summary>
         /// <returns>The enumerator.</returns>
-        public IEnumerable<TFOperation> GetEnumerator ()
+        public IEnumerable<TFOperation> GetEnumerator()
         {
             if (handle == IntPtr.Zero)
-                ObjectDisposedException ();
+                ObjectDisposedException();
             IntPtr token = IntPtr.Zero;
             IntPtr operll;
 
-            while ((operll = TF_GraphNextOperation (handle, ref token)) != IntPtr.Zero)
-                yield return new TFOperation (this, operll);
+            while ((operll = TF_GraphNextOperation(handle, ref token)) != IntPtr.Zero)
+                yield return new TFOperation(this, operll);
         }
 
         /// <summary>
@@ -711,20 +728,20 @@ namespace TensorflowSharpCore
         /// <returns>null for single dimension, .</returns>
         /// <param name="output">The output operation to probe.</param>
         /// <param name="status">Status buffer, if specified a status code will be left here, if not specified, a <see cref="T:TensorFlow.TFException"/> exception is raised if there is an error.</param>
-        public long [] GetShape (TFOutput output, TFStatus status = null)
+        public long[] GetShape(TFOutput output, TFStatus status = null)
         {
             if (handle == IntPtr.Zero)
-                ObjectDisposedException ();
-            var cstatus = TFStatus.Setup (status);
-            var ndims = TF_GraphGetTensorNumDims (handle, output, cstatus.handle);
-            if (!cstatus.CheckMaybeRaise (status, last: false))
+                ObjectDisposedException();
+            var cstatus = TFStatus.Setup(status);
+            var ndims = TF_GraphGetTensorNumDims(handle, output, cstatus.handle);
+            if (!cstatus.CheckMaybeRaise(status, last: false))
                 return null;
-            
+
             if (ndims == 0)
                 return null;
-            var ret = new long [ndims];
-            TF_GraphGetTensorShape (handle, output, ret, ndims, cstatus.handle);
-            cstatus.CheckMaybeRaise (status);
+            var ret = new long[ndims];
+            TF_GraphGetTensorShape(handle, output, ret, ndims, cstatus.handle);
+            cstatus.CheckMaybeRaise(status);
             return ret;
         }
 
@@ -761,55 +778,54 @@ namespace TensorflowSharpCore
         /// }
         /// </code>
         /// </remarks>
-        public TFScope WithScope (string nameScopeDesc)
+        public TFScope WithScope(string nameScopeDesc)
         {
-            var scope = new TFScope (this);
-            if (scope == null)
-                CurrentNameScope = "";
-            else if (CurrentNameScope.Length == 0)
+            var scope = new TFScope(this);
+            if (CurrentNameScope.Length == 0)
                 CurrentNameScope = nameScopeDesc;
             else
                 CurrentNameScope = CurrentNameScope + "/" + nameScopeDesc;
-            
+
             return scope;
         }
 
-        Dictionary<string, int> values = new Dictionary<string, int> ();
+        Dictionary<string, int> values = new Dictionary<string, int>();
 
-        string MakeName (string operName, string userName)
+        internal string MakeName(string operName, string userName)
         {
-            if (userName == null) {
+            if (userName == null)
+            {
                 var k = CurrentNameScope == "" ? operName : CurrentNameScope + "/" + operName;
 
-                return MakeUnique (k);
+                return MakeUnique(k);
             }
             if (CurrentNameScope == "")
                 return userName;
             return CurrentNameScope + "/" + userName;
         }
 
-        string MakeUnique (string name)
+        string MakeUnique(string name)
         {
             int val = 0;
 
-            if (!values.TryGetValue (name, out val))
+            if (!values.TryGetValue(name, out val))
                 val = 0;
             else
                 val++;
-            values [name] = val;
+            values[name] = val;
             return name + val;
         }
 
         internal int LastId;
-        internal int GetNextId ()
+        internal int GetNextId()
         {
             return LastId++;
         }
 
-        [DllImport (NativeBinding.TensorFlowLibrary)]
-        unsafe extern static void TF_GraphImportGraphDefWithReturnOutputs (
-            TF_Graph graph, LLBuffer *graph_def,
-            TF_ImportGraphDefOptions options, TFOutput *return_outputs,
+        [DllImport(NativeBinding.TensorFlowLibrary)]
+        unsafe extern static void TF_GraphImportGraphDefWithReturnOutputs(
+            TF_Graph graph, LLBuffer* graph_def,
+            TF_ImportGraphDefOptions options, TFOutput* return_outputs,
             int num_return_outputs, TF_Status status);
 
         /// <summary>
@@ -819,30 +835,33 @@ namespace TensorflowSharpCore
         /// <param name="options">Import options.</param>
         /// <param name="returnOutputs">Array large enough to contain all the return options.</param>
         /// <param name="status">Status buffer, if specified a status code will be left here, if not specified, a <see cref="T:TensorFlow.TFException"/> exception is raised if there is an error.</param>
-        public void ImportGraphDef (TFBuffer graphDef, TFImportGraphDefOptions options, TFOutput [] returnOutputs, TFStatus status = null)
+        public void ImportGraphDef(TFBuffer graphDef, TFImportGraphDefOptions options, TFOutput[] returnOutputs, TFStatus status = null)
         {
             if (handle == IntPtr.Zero)
-                ObjectDisposedException ();
+                ObjectDisposedException();
             if (graphDef == null)
-                throw new ArgumentNullException (nameof (graphDef));
+                throw new ArgumentNullException(nameof(graphDef));
             if (options == null)
-                throw new ArgumentNullException (nameof (options));
-            var cstatus = TFStatus.Setup (status);
+                throw new ArgumentNullException(nameof(options));
+            var cstatus = TFStatus.Setup(status);
 
             unsafe
             {
-                if (returnOutputs == null) {
-                    TF_GraphImportGraphDefWithReturnOutputs (handle, graphDef.LLBuffer, options.handle, null, 0, cstatus.handle);
-                } else {
-                    fixed (TFOutput* first = &returnOutputs [0])
+                if (returnOutputs == null)
+                {
+                    TF_GraphImportGraphDefWithReturnOutputs(handle, graphDef.LLBuffer, options.handle, null, 0, cstatus.handle);
+                }
+                else
+                {
+                    fixed (TFOutput* first = &returnOutputs[0])
                     {
-                        TF_GraphImportGraphDefWithReturnOutputs (handle, graphDef.LLBuffer, options.handle, first, returnOutputs.Length, cstatus.handle);
+                        TF_GraphImportGraphDefWithReturnOutputs(handle, graphDef.LLBuffer, options.handle, first, returnOutputs.Length, cstatus.handle);
                     }
                 }
             }
         }
 
-        [StructLayout (LayoutKind.Sequential)]
+        [StructLayout(LayoutKind.Sequential)]
         unsafe struct TFWhileParams
         {
             public int ninputs;
@@ -855,20 +874,20 @@ namespace TensorflowSharpCore
             public IntPtr charPtrName;
         }
 
-        [DllImport (NativeBinding.TensorFlowLibrary)]
-        static extern unsafe TFWhileParams TF_NewWhile (TF_Graph g, TFOutput [] inputs, int ninputs, TF_Status status);
+        [DllImport(NativeBinding.TensorFlowLibrary)]
+        static extern unsafe TFWhileParams TF_NewWhile(TF_Graph g, TFOutput[] inputs, int ninputs, TF_Status status);
 
-        [DllImport (NativeBinding.TensorFlowLibrary)]
-        static extern void TF_AbortWhile (ref TFWhileParams pars);
+        [DllImport(NativeBinding.TensorFlowLibrary)]
+        static extern void TF_AbortWhile(ref TFWhileParams pars);
 
-        [DllImport (NativeBinding.TensorFlowLibrary)]
-        static extern unsafe void TF_FinishWhile (ref TFWhileParams pars, TF_Status status, TFOutput *outputs);
+        [DllImport(NativeBinding.TensorFlowLibrary)]
+        static extern unsafe void TF_FinishWhile(ref TFWhileParams pars, TF_Status status, TFOutput* outputs);
 
-        static unsafe TFOutput [] CopyFrom (TFOutput* ptr, int n)
+        static unsafe TFOutput[] CopyFrom(TFOutput* ptr, int n)
         {
-            var r = new TFOutput [n];
+            var r = new TFOutput[n];
             for (int i = 0; i < n; i++)
-                r [i] = ptr [i];
+                r[i] = ptr[i];
 
             return r;
         }
@@ -895,7 +914,7 @@ namespace TensorflowSharpCore
         /// You can use the passed status record problems with it.
         /// </para>
         /// </remarks>
-        public delegate void WhileConstructor (TensorflowSharpCore.TFGraph conditionGraph, TFOutput [] condInputs, out TFOutput condOutput, TensorflowSharpCore.TFGraph bodyGraph, TFOutput [] bodyInputs, TFOutput [] bodyOutputs, out string name);
+        public delegate void WhileConstructor(TFGraph conditionGraph, TFOutput[] condInputs, out TFOutput condOutput, TFGraph bodyGraph, TFOutput[] bodyInputs, TFOutput[] bodyOutputs, out string name);
 
         /// <summary>
         /// Constructs a while loop with the specified inputs and a callback that composes the while loop
@@ -907,20 +926,21 @@ namespace TensorflowSharpCore
         /// An array of TFOutputs from creating the While loop, or null if there is an error creating the 
         /// while loop, or if the constructor raised an exception when it was invoked.
         /// </returns>
-        public TFOutput [] While (TFOutput [] inputs, WhileConstructor constructor, TFStatus status = null)
+        public TFOutput[] While(TFOutput[] inputs, WhileConstructor constructor, TFStatus status = null)
         {
             if (handle == IntPtr.Zero)
-                ObjectDisposedException ();
+                ObjectDisposedException();
             if (inputs == null)
-                throw new ArgumentNullException (nameof (inputs));
+                throw new ArgumentNullException(nameof(inputs));
             if (constructor == null)
-                throw new ArgumentNullException (nameof (constructor));
-            var cstatus = TFStatus.Setup (status);
-            TFWhileParams result = TF_NewWhile (handle, inputs, inputs.Length, cstatus.handle);
+                throw new ArgumentNullException(nameof(constructor));
+            var cstatus = TFStatus.Setup(status);
+            TFWhileParams result = TF_NewWhile(handle, inputs, inputs.Length, cstatus.handle);
             if (cstatus.Error)
                 return null;
-            
-            try {
+
+            try
+            {
 
                 // 
                 // Call constructor here
@@ -930,43 +950,45 @@ namespace TensorflowSharpCore
                 string name;
 
                 int n = result.ninputs;
-                TFOutput [] bodyOutputs = new TFOutput [n];
+                TFOutput[] bodyOutputs = new TFOutput[n];
                 unsafe
                 {
-                    var condGraph = new TFGraphUnowned (result.cond_graph);
-                    var bodyGraph = new TFGraphUnowned (result.body_graph);
-                    constructor (condGraph, CopyFrom (result.cond_inputs, n), out result.cond_output, bodyGraph, CopyFrom (result.body_inputs, n), bodyOutputs, out name);
+                    var condGraph = new TFGraphUnowned(result.cond_graph);
+                    var bodyGraph = new TFGraphUnowned(result.body_graph);
+                    constructor(condGraph, CopyFrom(result.cond_inputs, n), out result.cond_output, bodyGraph, CopyFrom(result.body_inputs, n), bodyOutputs, out name);
                 }
                 if (name == null || name == "")
-                    name = MakeUnique ("while");
+                    name = MakeUnique("while");
                 // On return, copy the condOutput and bodyOututs
-                var text = Encoding.UTF8.GetBytes (name);
+                var text = Encoding.UTF8.GetBytes(name);
 
-                result.charPtrName = Marshal.AllocHGlobal (text.Length + 1);
-                Marshal.Copy (text, 0, result.charPtrName, text.Length);
-                Marshal.WriteByte (result.charPtrName, text.Length, 0);
+                result.charPtrName = Marshal.AllocHGlobal(text.Length + 1);
+                Marshal.Copy(text, 0, result.charPtrName, text.Length);
+                Marshal.WriteByte(result.charPtrName, text.Length, 0);
 
                 unsafe
                 {
                     for (int i = 0; i < n; i++)
-                        result.body_outputs [i] = bodyOutputs [i];
-                    var ret = new TFOutput [inputs.Length];
-                    fixed (TFOutput* first = &ret [0])
-                        TF_FinishWhile (ref result, cstatus.handle, first);
+                        result.body_outputs[i] = bodyOutputs[i];
+                    var ret = new TFOutput[inputs.Length];
+                    fixed (TFOutput* first = &ret[0])
+                        TF_FinishWhile(ref result, cstatus.handle, first);
 
 
-                    if (cstatus.CheckMaybeRaise (status))
+                    if (cstatus.CheckMaybeRaise(status))
                         return ret;
                 }
                 return null;
-            } catch {
-                TF_AbortWhile (ref result);
+            }
+            catch
+            {
+                TF_AbortWhile(ref result);
                 return null;
             }
         }
 
-        [DllImport (NativeBinding.TensorFlowLibrary)]
-        static extern unsafe void TF_AddGradients (TF_Graph graph, TFOutput* ys, int ny, TFOutput* xs, int nx, TFOutput* dx, TF_Status status, TFOutput* dy);
+        [DllImport(NativeBinding.TensorFlowLibrary)]
+        static extern unsafe void TF_AddGradients(TF_Graph graph, TFOutput* ys, int ny, TFOutput* xs, int nx, TFOutput* dx, TF_Status status, TFOutput* dy);
 
         /// <summary>
         /// Adds a gradient: the operations needed to compute the partial derivatives of sum of <paramref name="y"/>` wrt to <paramref name="x"/>.
@@ -980,37 +1002,45 @@ namespace TensorflowSharpCore
         /// <remarks>
         /// d(y[0] + y[1]+ ...)/dx[0], d(y[0] + y[1] + ...)/dx[1]z...
         /// </remarks>
-        public TFOutput [] AddGradients (TFOutput [] y, TFOutput [] x, TFOutput [] dx = null, TFStatus status = null)
+        public TFOutput[] AddGradients(TFOutput[] y, TFOutput[] x, TFOutput[] dx = null, TFStatus status = null)
         {
             if (y == null)
-                throw new ArgumentNullException (nameof (y));
+                throw new ArgumentNullException(nameof(y));
             if (x == null)
-                throw new ArgumentNullException (nameof (x));
-            if (dx != null) {
+                throw new ArgumentNullException(nameof(x));
+            if (dx != null)
+            {
                 if (dx.Length != y.Length)
-                    throw new ArgumentException ("If dx is not null, the size of the gradients must match the size of y", nameof (dx));
+                    throw new ArgumentException("If dx is not null, the size of the gradients must match the size of y", nameof(dx));
             }
 
-            var cstatus = TFStatus.Setup (status);
+            var cstatus = TFStatus.Setup(status);
 
-            var ret = new TFOutput [x.Length];
+            var ret = new TFOutput[x.Length];
             unsafe
             {
-                fixed (TFOutput* pret = &ret [0]) {
-                    fixed (TFOutput* py = &y [0]) {
-                        fixed (TFOutput* px = &x [0]) {
-                            if (dx == null) {
-                                TF_AddGradients (handle, py, y.Length, px, x.Length, (TFOutput*)null, status.Handle, pret);
-                            } else {
-                                fixed (TFOutput* pdx = &dx [0]) {
-                                    TF_AddGradients (handle, py, y.Length, px, x.Length, pdx, status.Handle, pret);
+                fixed (TFOutput* pret = &ret[0])
+                {
+                    fixed (TFOutput* py = &y[0])
+                    {
+                        fixed (TFOutput* px = &x[0])
+                        {
+                            if (dx == null)
+                            {
+                                TF_AddGradients(handle, py, y.Length, px, x.Length, (TFOutput*)null, status.Handle, pret);
+                            }
+                            else
+                            {
+                                fixed (TFOutput* pdx = &dx[0])
+                                {
+                                    TF_AddGradients(handle, py, y.Length, px, x.Length, pdx, status.Handle, pret);
                                 }
                             }
                         }
                     }
                 }
             }
-            if (!cstatus.CheckMaybeRaise (status, last: false))
+            if (!cstatus.CheckMaybeRaise(status, last: false))
                 return null;
             return ret;
         }
@@ -1021,13 +1051,13 @@ namespace TensorflowSharpCore
     // when we want to surface a TFGraph that we do not own, so we do not
     // want to delete the handle when this object is collected
     //
-    internal class TFGraphUnowned : TensorflowSharpCore.TFGraph
+    internal class TFGraphUnowned : TFGraph
     {
-        internal TFGraphUnowned (IntPtr handle) : base (handle)
+        internal TFGraphUnowned(IntPtr handle) : base(handle)
         {
         }
 
-        internal override void NativeDispose (TF_Status handle)
+        internal override void NativeDispose(TF_Status handle)
         {
             // nothing, we do not own the handle
         }
@@ -1040,12 +1070,12 @@ namespace TensorflowSharpCore
     /// Instances of this class when disposed restore the CurrentNameScope to the
     /// value they had when the TFGraph.WithScope method was called.
     /// </remarks>
-    public class TFScope : IDisposable 
+    public class TFScope : IDisposable
     {
-        TensorflowSharpCore.TFGraph container;
+        TFGraph container;
         string name;
 
-        internal TFScope (TensorflowSharpCore.TFGraph container)
+        internal TFScope(TFGraph container)
         {
             this.container = container;
             name = container.CurrentNameScope;
@@ -1057,7 +1087,7 @@ namespace TensorflowSharpCore
         /// <remarks>Call <see cref="Dispose"/> when you are finished using the <see cref="T:TensorFlow.TFScope"/>
         /// to restore the previous name scope in use in the <see cref="T:TensorFlow.TFGraph"/>.
         /// </remarks>
-        public void Dispose ()
+        public void Dispose()
         {
             container.CurrentNameScope = name;
         }
@@ -1085,82 +1115,82 @@ namespace TensorflowSharpCore
     public class TFOperationDesc : TFDisposable
     {
         string opType, operName;
-        TensorflowSharpCore.TFGraph graph;
+        TFGraph graph;
 
         // extern TF_OperationDescription * TF_NewOperation (TF_Graph *graph, const char *op_type, const char *oper_name);
-        [DllImport (NativeBinding.TensorFlowLibrary)]
-        static extern unsafe TF_OperationDescription TF_NewOperation (TF_Graph graph, string opType, string oper_name);
+        [DllImport(NativeBinding.TensorFlowLibrary)]
+        static extern unsafe TF_OperationDescription TF_NewOperation(TF_Graph graph, string opType, string oper_name);
 
-        public TFOperationDesc (TensorflowSharpCore.TFGraph graph, string opType, string operName) : base (IntPtr.Zero)
+        public TFOperationDesc(TFGraph graph, string opType, string operName) : base(IntPtr.Zero)
         {
             if (graph == null)
-                throw new ArgumentNullException ("graph");
+                throw new ArgumentNullException("graph");
 
-            handle = TF_NewOperation (graph.handle, opType, operName);
+            handle = TF_NewOperation(graph.handle, opType, operName);
             this.graph = graph;
             this.opType = opType;
             this.operName = operName;
         }
 
-        internal override void NativeDispose (IntPtr handle)
+        internal override void NativeDispose(IntPtr handle)
         {
             // If you reach this, you never called FinishOperation
-            Console.WriteLine ($"TFOperationDescription({opType},{operName} was never turned into an TFOperation");
+            Console.WriteLine($"TFOperationDescription({opType},{operName} was never turned into an TFOperation");
         }
 
         // extern void TF_SetDevice (TF_OperationDescription *desc, const char *device);
-        [DllImport (NativeBinding.TensorFlowLibrary)]
-        static extern unsafe void TF_SetDevice (TF_OperationDescription desc, string device);
+        [DllImport(NativeBinding.TensorFlowLibrary)]
+        static extern unsafe void TF_SetDevice(TF_OperationDescription desc, string device);
 
-        public TFOperationDesc SetDevice (string device)
+        public TFOperationDesc SetDevice(string device)
         {
             if (handle == IntPtr.Zero)
-                ObjectDisposedException ();
+                ObjectDisposedException();
             if (device == null)
-                throw new ArgumentNullException ("device");
-            TF_SetDevice (handle, device);
+                throw new ArgumentNullException("device");
+            TF_SetDevice(handle, device);
             return this;
         }
 
         // extern void TF_AddInput (TF_OperationDescription *desc, TF_Output input);
-        [DllImport (NativeBinding.TensorFlowLibrary)]
-        static extern unsafe void TF_AddInput (TF_OperationDescription desc, TFOutput input);
+        [DllImport(NativeBinding.TensorFlowLibrary)]
+        static extern unsafe void TF_AddInput(TF_OperationDescription desc, TFOutput input);
 
         /// <summary>
         /// Adds the specified input to the operation
         /// </summary>
         /// <returns>The input.</returns>
         /// <param name="input">Input.</param>
-        public TFOperationDesc AddInput (TFOutput input)
+        public TFOperationDesc AddInput(TFOutput input)
         {
             if (handle == IntPtr.Zero)
-                ObjectDisposedException ();
-            TF_AddInput (handle, input);
+                ObjectDisposedException();
+            TF_AddInput(handle, input);
             return this;
         }
 
         // extern void TF_AddInputList (TF_OperationDescription *desc, const TF_Output *inputs, int num_inputs);
-        [DllImport (NativeBinding.TensorFlowLibrary)]
-        static extern unsafe void TF_AddInputList (TF_OperationDescription desc, TFOutput [] inputs, int num_inputs);
+        [DllImport(NativeBinding.TensorFlowLibrary)]
+        static extern unsafe void TF_AddInputList(TF_OperationDescription desc, TFOutput[] inputs, int num_inputs);
 
         /// <summary>
         /// Adds a series of inputs to the operation.
         /// </summary>
         /// <param name="inputs">Inputs, this is a params array for your convenience.</param>
-        public TFOperationDesc AddInputs (params TFOutput [] inputs)
+        public TFOperationDesc AddInputs(params TFOutput[] inputs)
         {
             if (handle == IntPtr.Zero)
-                ObjectDisposedException ();
+                ObjectDisposedException();
             if (inputs == null || inputs.Length == 0)
                 return this;
 
-            TF_AddInputList (handle, inputs, inputs.Length);
+            TF_AddInputList(handle, inputs, inputs.Length);
             return this;
         }
 
         // extern void TF_AddControlInput (TF_OperationDescription *desc, TF_Operation *input);
-        [DllImport (NativeBinding.TensorFlowLibrary)]
-        static extern unsafe void TF_AddControlInput (TF_OperationDescription desc, TF_Operation input);
+        [DllImport(NativeBinding.TensorFlowLibrary)]
+        static extern unsafe void TF_AddControlInput(TF_OperationDescription desc, TF_Operation input);
 
         /// <summary>
         /// Ensure that the operation does not execute before the control operation does.
@@ -1177,341 +1207,344 @@ namespace TensorflowSharpCore
         /// running the operation.
         /// </para>
         /// </remarks>
-        public TFOperationDesc AddControlInput (TFOperation control)
+        public TFOperationDesc AddControlInput(TFOperation control)
         {
             if (handle == IntPtr.Zero)
-                ObjectDisposedException ();
+                ObjectDisposedException();
             if (control == null)
-                throw new ArgumentNullException ("input");
+                throw new ArgumentNullException("input");
 
-            TF_AddControlInput (handle, control.handle);
+            TF_AddControlInput(handle, control.handle);
             return this;
         }
 
         // extern void TF_ColocateWith (TF_OperationDescription *desc, TF_Operation *op);
-        [DllImport (NativeBinding.TensorFlowLibrary)]
-        static extern unsafe void TF_ColocateWith (TF_OperationDescription desc, TF_Operation op);
+        [DllImport(NativeBinding.TensorFlowLibrary)]
+        static extern unsafe void TF_ColocateWith(TF_OperationDescription desc, TF_Operation op);
 
-        public TFOperationDesc ColocateWith (TFOperation op)
+        public TFOperationDesc ColocateWith(TFOperation op)
         {
             if (handle == IntPtr.Zero)
-                ObjectDisposedException ();
+                ObjectDisposedException();
             if (op == null)
-                throw new ArgumentNullException ("op");
-            TF_ColocateWith (handle, op.handle);
+                throw new ArgumentNullException("op");
+            TF_ColocateWith(handle, op.handle);
             return this;
         }
 
         // extern void TF_SetAttrString (TF_OperationDescription *desc, const char *attr_name, const void *value, size_t length);
-        [DllImport (NativeBinding.TensorFlowLibrary)]
-        static extern unsafe void TF_SetAttrString (TF_OperationDescription desc, string attr_name, IntPtr value, size_t length);
+        [DllImport(NativeBinding.TensorFlowLibrary)]
+        static extern unsafe void TF_SetAttrString(TF_OperationDescription desc, string attr_name, IntPtr value, size_t length);
 
-        public TFOperationDesc SetAttr (string attrName, string value)
+        public TFOperationDesc SetAttr(string attrName, string value)
         {
             if (handle == IntPtr.Zero)
-                ObjectDisposedException ();
+                ObjectDisposedException();
             if (attrName == null)
-                throw new ArgumentNullException (nameof (attrName));
-            var bytes = Encoding.UTF8.GetBytes (value);
-            var buf = Marshal.AllocHGlobal (bytes.Length + 1);
-            Marshal.Copy (bytes, 0, buf, bytes.Length);
+                throw new ArgumentNullException(nameof(attrName));
+            var bytes = Encoding.UTF8.GetBytes(value);
+            var buf = Marshal.AllocHGlobal(bytes.Length + 1);
+            Marshal.Copy(bytes, 0, buf, bytes.Length);
 
-            TF_SetAttrString (handle, attrName, buf, (UIntPtr)bytes.Length);
+            TF_SetAttrString(handle, attrName, buf, (UIntPtr)bytes.Length);
             return this;
         }
 
         // extern void TF_SetAttrStringList (TF_OperationDescription *desc, const char *attr_name, const void *const *values, const size_t *lengths, int num_values);
-        [DllImport (NativeBinding.TensorFlowLibrary)]
-        static extern unsafe void TF_SetAttrStringList (TF_OperationDescription desc, string attr_name, IntPtr [] values, UIntPtr [] lengths, int num_values);
-        public TFOperationDesc SetAttr (string attrName, string [] values)
+        [DllImport(NativeBinding.TensorFlowLibrary)]
+        static extern unsafe void TF_SetAttrStringList(TF_OperationDescription desc, string attr_name, IntPtr[] values, UIntPtr[] lengths, int num_values);
+        public TFOperationDesc SetAttr(string attrName, string[] values)
         {
             if (handle == IntPtr.Zero)
-                ObjectDisposedException ();
+                ObjectDisposedException();
             if (attrName == null)
-                throw new ArgumentNullException (nameof (attrName));
+                throw new ArgumentNullException(nameof(attrName));
             if (values == null)
-                throw new ArgumentNullException (nameof (values));
+                throw new ArgumentNullException(nameof(values));
 
             int n = values.Length;
-            var unmanaged = new IntPtr [n];
-            var lenghts = new UIntPtr [n];
-            for (int i = 0; i < n; i++) {
-                var bytes = Encoding.UTF8.GetBytes (values [i]);
-                var buf = Marshal.AllocHGlobal (bytes.Length + 1);
+            var unmanaged = new IntPtr[n];
+            var lenghts = new UIntPtr[n];
+            for (int i = 0; i < n; i++)
+            {
+                var bytes = Encoding.UTF8.GetBytes(values[i]);
+                var buf = Marshal.AllocHGlobal(bytes.Length + 1);
                 var bc = bytes.Length;
 
-                Marshal.Copy (bytes, 0, buf, bc);
-                unmanaged [i] = buf;
-                lenghts [i] = (size_t)bc;
+                Marshal.Copy(bytes, 0, buf, bc);
+                unmanaged[i] = buf;
+                lenghts[i] = (size_t)bc;
             }
-            TF_SetAttrStringList (handle, attrName, unmanaged, lenghts, n);
+            TF_SetAttrStringList(handle, attrName, unmanaged, lenghts, n);
             return this;
         }
 
 
         // extern void TF_SetAttrInt (TF_OperationDescription *desc, const char *attr_name, int64_t value);
-        [DllImport (NativeBinding.TensorFlowLibrary)]
-        static extern unsafe void TF_SetAttrInt (TF_OperationDescription desc, string attr_name, long value);
+        [DllImport(NativeBinding.TensorFlowLibrary)]
+        static extern unsafe void TF_SetAttrInt(TF_OperationDescription desc, string attr_name, long value);
 
-        public TFOperationDesc SetAttr (string attrName, long value)
+        public TFOperationDesc SetAttr(string attrName, long value)
         {
             if (handle == IntPtr.Zero)
-                ObjectDisposedException ();
+                ObjectDisposedException();
             if (attrName == null)
-                throw new ArgumentNullException (nameof (attrName));
-            TF_SetAttrInt (handle, attrName, value);
+                throw new ArgumentNullException(nameof(attrName));
+            TF_SetAttrInt(handle, attrName, value);
             return this;
         }
 
         // extern void TF_SetAttrIntList (TF_OperationDescription *desc, const char *attr_name, const int64_t *values, int num_values);
-        [DllImport (NativeBinding.TensorFlowLibrary)]
-        static extern unsafe void TF_SetAttrIntList (TF_OperationDescription desc, string attr_name, long [] values, int num_values);
+        [DllImport(NativeBinding.TensorFlowLibrary)]
+        static extern unsafe void TF_SetAttrIntList(TF_OperationDescription desc, string attr_name, long[] values, int num_values);
 
-        public TFOperationDesc SetAttr (string attrName, long [] values)
+        public TFOperationDesc SetAttr(string attrName, long[] values)
         {
             if (handle == IntPtr.Zero)
-                ObjectDisposedException ();
+                ObjectDisposedException();
             if (attrName == null)
-                throw new ArgumentNullException (nameof (attrName));
+                throw new ArgumentNullException(nameof(attrName));
             if (values == null)
-                throw new ArgumentNullException (nameof (values));
+                throw new ArgumentNullException(nameof(values));
 
-            TF_SetAttrIntList (handle, attrName, values, values.Length);
+            TF_SetAttrIntList(handle, attrName, values, values.Length);
             return this;
         }
 
 
         // extern void TF_SetAttrFloat (TF_OperationDescription *desc, const char *attr_name, float value);
-        [DllImport (NativeBinding.TensorFlowLibrary)]
-        static extern unsafe void TF_SetAttrFloat (TF_OperationDescription desc, string attr_name, float value);
+        [DllImport(NativeBinding.TensorFlowLibrary)]
+        static extern unsafe void TF_SetAttrFloat(TF_OperationDescription desc, string attr_name, float value);
 
-        public TFOperationDesc SetAttr (string attrName, float value)
+        public TFOperationDesc SetAttr(string attrName, float value)
         {
             if (handle == IntPtr.Zero)
-                ObjectDisposedException ();
+                ObjectDisposedException();
             if (attrName == null)
-                throw new ArgumentNullException (nameof (attrName));
-            TF_SetAttrFloat (handle, attrName, value);
+                throw new ArgumentNullException(nameof(attrName));
+            TF_SetAttrFloat(handle, attrName, value);
             return this;
         }
 
         // extern void TF_SetAttrFloatList (TF_OperationDescription *desc, const char *attr_name, const float *values, int num_values);
-        [DllImport (NativeBinding.TensorFlowLibrary)]
-        static extern unsafe void TF_SetAttrFloatList (TF_OperationDescription desc, string attr_name, float [] values, int num_values);
+        [DllImport(NativeBinding.TensorFlowLibrary)]
+        static extern unsafe void TF_SetAttrFloatList(TF_OperationDescription desc, string attr_name, float[] values, int num_values);
 
-        public TFOperationDesc SetAttr (string attrName, float [] values)
+        public TFOperationDesc SetAttr(string attrName, float[] values)
         {
             if (handle == IntPtr.Zero)
-                ObjectDisposedException ();
+                ObjectDisposedException();
             if (attrName == null)
-                throw new ArgumentNullException (nameof (attrName));
+                throw new ArgumentNullException(nameof(attrName));
             if (values == null)
-                throw new ArgumentNullException (nameof (values));
+                throw new ArgumentNullException(nameof(values));
 
-            TF_SetAttrFloatList (handle, attrName, values, values.Length);
+            TF_SetAttrFloatList(handle, attrName, values, values.Length);
             return this;
         }
 
         // extern void TF_SetAttrBool (TF_OperationDescription *desc, const char *attr_name, unsigned char value);
-        [DllImport (NativeBinding.TensorFlowLibrary)]
-        static extern unsafe void TF_SetAttrBool (TF_OperationDescription desc, string attr_name, byte value);
+        [DllImport(NativeBinding.TensorFlowLibrary)]
+        static extern unsafe void TF_SetAttrBool(TF_OperationDescription desc, string attr_name, byte value);
 
-        public TFOperationDesc SetAttr (string attrName, bool value)
+        public TFOperationDesc SetAttr(string attrName, bool value)
         {
             if (handle == IntPtr.Zero)
-                ObjectDisposedException ();
+                ObjectDisposedException();
             if (attrName == null)
-                throw new ArgumentNullException (nameof (attrName));
-            TF_SetAttrBool (handle, attrName, (byte)(value ? 1 : 0));
+                throw new ArgumentNullException(nameof(attrName));
+            TF_SetAttrBool(handle, attrName, (byte)(value ? 1 : 0));
             return this;
         }
 
         // extern void TF_SetAttrBoolList (TF_OperationDescription *desc, const char *attr_name, const unsigned char *values, int num_values);
-        [DllImport (NativeBinding.TensorFlowLibrary)]
-        static extern unsafe void TF_SetAttrBoolList (TF_OperationDescription desc, string attr_name, bool [] values, int num_values);
+        [DllImport(NativeBinding.TensorFlowLibrary)]
+        static extern unsafe void TF_SetAttrBoolList(TF_OperationDescription desc, string attr_name, bool[] values, int num_values);
 
-        public TFOperationDesc SetAttr (string attrName, bool [] values)
+        public TFOperationDesc SetAttr(string attrName, bool[] values)
         {
             if (handle == IntPtr.Zero)
-                ObjectDisposedException ();
+                ObjectDisposedException();
             if (attrName == null)
-                throw new ArgumentNullException (nameof (attrName));
+                throw new ArgumentNullException(nameof(attrName));
             if (values == null)
-                throw new ArgumentNullException (nameof (values));
+                throw new ArgumentNullException(nameof(values));
 
-            TF_SetAttrBoolList (handle, attrName, values, values.Length);
+            TF_SetAttrBoolList(handle, attrName, values, values.Length);
             return this;
         }
 
         // extern void TF_SetAttrType (TF_OperationDescription *desc, const char *attr_name, TF_DataType value);
-        [DllImport (NativeBinding.TensorFlowLibrary)]
-        static extern unsafe void TF_SetAttrType (TF_OperationDescription desc, string attr_name, TFDataType value);
+        [DllImport(NativeBinding.TensorFlowLibrary)]
+        static extern unsafe void TF_SetAttrType(TF_OperationDescription desc, string attr_name, TFDataType value);
 
-        public TFOperationDesc SetAttrType (string attrName, TFDataType dataType)
+        public TFOperationDesc SetAttrType(string attrName, TFDataType dataType)
         {
             if (handle == IntPtr.Zero)
-                ObjectDisposedException ();
+                ObjectDisposedException();
             if (attrName == null)
-                throw new ArgumentNullException (nameof (attrName));
-            TF_SetAttrType (handle, attrName, dataType);
+                throw new ArgumentNullException(nameof(attrName));
+            TF_SetAttrType(handle, attrName, dataType);
             return this;
         }
 
         // extern void TF_SetAttrTypeList (TF_OperationDescription *desc, const char *attr_name, const TF_DataType *values, int num_values);
-        [DllImport (NativeBinding.TensorFlowLibrary)]
-        static extern unsafe void TF_SetAttrTypeList (TF_OperationDescription desc, string attr_name, TFDataType [] values, int num_values);
+        [DllImport(NativeBinding.TensorFlowLibrary)]
+        static extern unsafe void TF_SetAttrTypeList(TF_OperationDescription desc, string attr_name, TFDataType[] values, int num_values);
 
-        public TFOperationDesc SetAttrType (string attrName, params TFDataType [] dataType)
+        public TFOperationDesc SetAttrType(string attrName, params TFDataType[] dataType)
         {
             if (handle == IntPtr.Zero)
-                ObjectDisposedException ();
+                ObjectDisposedException();
             if (attrName == null)
-                throw new ArgumentNullException (nameof (attrName));
+                throw new ArgumentNullException(nameof(attrName));
             if (dataType == null)
-                throw new ArgumentNullException (nameof (dataType));
-            TF_SetAttrTypeList (handle, attrName, dataType, dataType.Length);
+                throw new ArgumentNullException(nameof(dataType));
+            TF_SetAttrTypeList(handle, attrName, dataType, dataType.Length);
             return this;
         }
 
         // extern void TF_SetAttrShape (TF_OperationDescription *desc, const char *attr_name, const int64_t *dims, int num_dims);
-        [DllImport (NativeBinding.TensorFlowLibrary)]
-        static extern unsafe void TF_SetAttrShape (TF_OperationDescription desc, string attr_name, long [] dims, int num_dims);
-        [DllImport (NativeBinding.TensorFlowLibrary)]
-        static extern unsafe void TF_SetAttrShape (TF_OperationDescription desc, string attr_name, IntPtr dims, int num_dims);
+        [DllImport(NativeBinding.TensorFlowLibrary)]
+        static extern unsafe void TF_SetAttrShape(TF_OperationDescription desc, string attr_name, long[] dims, int num_dims);
+        [DllImport(NativeBinding.TensorFlowLibrary)]
+        static extern unsafe void TF_SetAttrShape(TF_OperationDescription desc, string attr_name, IntPtr dims, int num_dims);
 
-        public TFOperationDesc SetAttrShape (string attrName, TFShape shape)
+        public TFOperationDesc SetAttrShape(string attrName, TFShape shape)
         {
             if (handle == IntPtr.Zero)
-                ObjectDisposedException ();
+                ObjectDisposedException();
             if (attrName == null)
-                throw new ArgumentNullException (nameof (attrName));
-            if (shape == null || shape.dims  == null)
-                TF_SetAttrShape (handle, attrName, null, -1);
+                throw new ArgumentNullException(nameof(attrName));
+            if (shape == null || shape.dims == null)
+                TF_SetAttrShape(handle, attrName, null, -1);
             else
-                TF_SetAttrShape (handle, attrName, shape.dims, shape.dims.Length);
+                TF_SetAttrShape(handle, attrName, shape.dims, shape.dims.Length);
             return this;
         }
 
         // extern void TF_SetAttrShapeList (TF_OperationDescription *desc, const char *attr_name, const int64_t *const *dims, const int *num_dims, int num_shapes);
-        [DllImport (NativeBinding.TensorFlowLibrary)]
-        static extern unsafe void TF_SetAttrShapeList (TF_OperationDescription desc, string attr_name, IntPtr dims, int [] num_dims, int num_shapes);
+        [DllImport(NativeBinding.TensorFlowLibrary)]
+        static extern unsafe void TF_SetAttrShapeList(TF_OperationDescription desc, string attr_name, IntPtr dims, int[] num_dims, int num_shapes);
 
-        public TFOperationDesc SetAttrShape (string attrName, TFShape [] shapeList)
+        public TFOperationDesc SetAttrShape(string attrName, TFShape[] shapeList)
         {
             if (handle == IntPtr.Zero)
-                ObjectDisposedException ();
+                ObjectDisposedException();
             if (attrName == null)
-                throw new ArgumentNullException (nameof (attrName));
+                throw new ArgumentNullException(nameof(attrName));
             if (shapeList == null)
-                throw new ArgumentNullException (nameof (shapeList));
+                throw new ArgumentNullException(nameof(shapeList));
             int num_shapes = shapeList.Length;
-            var num_dims = new int [shapeList.Length];
+            var num_dims = new int[shapeList.Length];
             unsafe
             {
-                var unmanaged = Marshal.AllocHGlobal (sizeof (IntPtr) * num_shapes);
+                var unmanaged = Marshal.AllocHGlobal(sizeof(IntPtr) * num_shapes);
                 int ofs = 0;
-                for (int i = 0; i < num_shapes; i++) {
-                    IntPtr array = Marshal.AllocHGlobal (sizeof (long) * shapeList [i].dims.Length);
-                    Marshal.Copy (shapeList [i].dims, 0, array, shapeList [i].dims.Length);
-                    Marshal.WriteIntPtr (unmanaged, ofs, array);
-                    ofs += sizeof (IntPtr);
+                for (int i = 0; i < num_shapes; i++)
+                {
+                    IntPtr array = Marshal.AllocHGlobal(sizeof(long) * shapeList[i].dims.Length);
+                    Marshal.Copy(shapeList[i].dims, 0, array, shapeList[i].dims.Length);
+                    Marshal.WriteIntPtr(unmanaged, ofs, array);
+                    ofs += sizeof(IntPtr);
                 }
-                TF_SetAttrShapeList (handle, attrName, unmanaged, num_dims, num_shapes);
+                TF_SetAttrShapeList(handle, attrName, unmanaged, num_dims, num_shapes);
                 ofs = 0;
-                for (int i = 0; i < num_shapes; i++) {
-                    var ptr = Marshal.ReadIntPtr (unmanaged, ofs);
-                    Marshal.FreeHGlobal (ptr);
-                    ofs += sizeof (IntPtr);
+                for (int i = 0; i < num_shapes; i++)
+                {
+                    var ptr = Marshal.ReadIntPtr(unmanaged, ofs);
+                    Marshal.FreeHGlobal(ptr);
+                    ofs += sizeof(IntPtr);
                 }
-                Marshal.FreeHGlobal (unmanaged);
+                Marshal.FreeHGlobal(unmanaged);
             }
             return this;
         }
 
         // extern void TF_SetAttrTensorShapeProto (TF_OperationDescription *desc, const char *attr_name, const void *proto, size_t proto_len, TF_Status *status);
-        [DllImport (NativeBinding.TensorFlowLibrary)]
-        static extern unsafe void TF_SetAttrTensorShapeProto (TF_OperationDescription desc, string attr_name, IntPtr proto, size_t proto_len, TF_Status status);
-        public TFOperationDesc SetAttrTensorShapeProto (string attrName, IntPtr proto, size_t protoLen, TFStatus status = null)
+        [DllImport(NativeBinding.TensorFlowLibrary)]
+        static extern unsafe void TF_SetAttrTensorShapeProto(TF_OperationDescription desc, string attr_name, IntPtr proto, size_t proto_len, TF_Status status);
+        public TFOperationDesc SetAttrTensorShapeProto(string attrName, IntPtr proto, size_t protoLen, TFStatus status = null)
         {
             if (handle == IntPtr.Zero)
-                ObjectDisposedException ();
-            var cstatus = TFStatus.Setup (status);
-            TF_SetAttrTensorShapeProto (handle, attrName, proto, protoLen, cstatus.handle);
-            cstatus.CheckMaybeRaise (status);
+                ObjectDisposedException();
+            var cstatus = TFStatus.Setup(status);
+            TF_SetAttrTensorShapeProto(handle, attrName, proto, protoLen, cstatus.handle);
+            cstatus.CheckMaybeRaise(status);
             return this;
         }
 
         // extern void TF_SetAttrTensorShapeProtoList (TF_OperationDescription *desc, const char *attr_name, const void *const *protos, const size_t *proto_lens, int num_shapes, TF_Status *status);
-        [DllImport (NativeBinding.TensorFlowLibrary)]
-        static extern unsafe void TF_SetAttrTensorShapeProtoList (TF_OperationDescription desc, string attr_name, void** protos, size_t* proto_lens, int num_shapes, TF_Status status);
+        [DllImport(NativeBinding.TensorFlowLibrary)]
+        static extern unsafe void TF_SetAttrTensorShapeProtoList(TF_OperationDescription desc, string attr_name, void** protos, size_t* proto_lens, int num_shapes, TF_Status status);
         // TODO:
 
         // extern void TF_SetAttrTensor (TF_OperationDescription *desc, const char *attr_name, TF_Tensor *value, TF_Status *status);
-        [DllImport (NativeBinding.TensorFlowLibrary)]
-        static extern unsafe void TF_SetAttrTensor (TF_OperationDescription desc, string attr_name, TF_Tensor value, TF_Status status);
+        [DllImport(NativeBinding.TensorFlowLibrary)]
+        static extern unsafe void TF_SetAttrTensor(TF_OperationDescription desc, string attr_name, TF_Tensor value, TF_Status status);
 
-        public TFOperationDesc SetAttr (string attrName, TFTensor tensor, TFStatus status = null)
+        public TFOperationDesc SetAttr(string attrName, TFTensor tensor, TFStatus status = null)
         {
             if (handle == IntPtr.Zero)
-                ObjectDisposedException ();
+                ObjectDisposedException();
             if (attrName == null)
-                throw new ArgumentNullException (nameof (attrName));
+                throw new ArgumentNullException(nameof(attrName));
             if (tensor == null)
-                throw new ArgumentNullException ("tensor");
-            var cstatus = TFStatus.Setup (status);
+                throw new ArgumentNullException("tensor");
+            var cstatus = TFStatus.Setup(status);
 
-            TF_SetAttrTensor (handle, attrName, tensor.handle, cstatus.handle);
-            cstatus.CheckMaybeRaise (status);
+            TF_SetAttrTensor(handle, attrName, tensor.handle, cstatus.handle);
+            cstatus.CheckMaybeRaise(status);
             return this;
         }
 
         // extern void TF_SetAttrTensorList (TF_OperationDescription *desc, const char *attr_name, TF_Tensor *const *values, int num_values, TF_Status *status);
-        [DllImport (NativeBinding.TensorFlowLibrary)]
-        static extern unsafe void TF_SetAttrTensorList (TF_OperationDescription desc, string attr_name, IntPtr [] values, int num_values, TF_Status status);
-        public TFOperationDesc SetAttr (string attrName, TFTensor [] tensor, TFStatus status = null)
+        [DllImport(NativeBinding.TensorFlowLibrary)]
+        static extern unsafe void TF_SetAttrTensorList(TF_OperationDescription desc, string attr_name, IntPtr[] values, int num_values, TF_Status status);
+        public TFOperationDesc SetAttr(string attrName, TFTensor[] tensor, TFStatus status = null)
         {
             if (handle == IntPtr.Zero)
-                ObjectDisposedException ();
+                ObjectDisposedException();
             if (attrName == null)
-                throw new ArgumentNullException (nameof (attrName));
+                throw new ArgumentNullException(nameof(attrName));
             if (tensor == null)
-                throw new ArgumentNullException (nameof (tensor));
-            var cstatus = TFStatus.Setup (status);
-            var unmanaged = new IntPtr [tensor.Length];
+                throw new ArgumentNullException(nameof(tensor));
+            var cstatus = TFStatus.Setup(status);
+            var unmanaged = new IntPtr[tensor.Length];
             for (int i = 0; i < tensor.Length; i++)
-                unmanaged [i] = tensor [i].handle;
-            TF_SetAttrTensorList (handle, attrName, unmanaged, unmanaged.Length, cstatus.handle);
-            cstatus.CheckMaybeRaise (status);
+                unmanaged[i] = tensor[i].handle;
+            TF_SetAttrTensorList(handle, attrName, unmanaged, unmanaged.Length, cstatus.handle);
+            cstatus.CheckMaybeRaise(status);
             return this;
         }
 
         // extern void TF_SetAttrValueProto (TF_OperationDescription *desc, const char *attr_name, const void *proto, size_t proto_len, TF_Status *status);
-        [DllImport (NativeBinding.TensorFlowLibrary)]
-        static extern unsafe void TF_SetAttrValueProto (TF_OperationDescription desc, string attr_name, void* proto, size_t proto_len, TF_Status status);
+        [DllImport(NativeBinding.TensorFlowLibrary)]
+        static extern unsafe void TF_SetAttrValueProto(TF_OperationDescription desc, string attr_name, void* proto, size_t proto_len, TF_Status status);
         // TODO:
 
         // extern TF_Operation * TF_FinishOperation (TF_OperationDescription *desc, TF_Status *status);
-        [DllImport (NativeBinding.TensorFlowLibrary)]
-        static extern unsafe TF_Operation TF_FinishOperation (TF_OperationDescription desc, TF_Status status);
+        [DllImport(NativeBinding.TensorFlowLibrary)]
+        static extern unsafe TF_Operation TF_FinishOperation(TF_OperationDescription desc, TF_Status status);
 
         /// <summary>
         /// Turns the operation description into an actual operation in the graph.
         /// </summary>
         /// <returns>The operation on success, or null on error.</returns>
         /// <param name="status">Optional status, on failure the operation is not added to the graph.  If you pass null (the default), this operation throws on error conditions.</param>
-        public TFOperation FinishOperation (TFStatus status = null)
+        public TFOperation FinishOperation(TFStatus status = null)
         {
             if (handle == IntPtr.Zero)
-                ObjectDisposedException ();
-            var cstatus = TFStatus.Setup (status);
-            var h = TF_FinishOperation (handle, cstatus.handle);
-            cstatus.CheckMaybeRaise (status);
+                ObjectDisposedException();
+            var cstatus = TFStatus.Setup(status);
+            var h = TF_FinishOperation(handle, cstatus.handle);
+            cstatus.CheckMaybeRaise(status);
             handle = IntPtr.Zero;
-            GC.SuppressFinalize (this);
+            GC.SuppressFinalize(this);
             if (status != null && status.Error)
                 return null;
 
-            return new TFOperation (graph, h);
+            return new TFOperation(graph, h);
         }
     }
 
@@ -1534,219 +1567,221 @@ namespace TensorflowSharpCore
         public IntPtr Handle => handle;
 
         // Pointer to the graph, to keep it from collecting if there are TFOperations alive.
-        internal TensorflowSharpCore.TFGraph graph;
+        internal TFGraph graph;
 
-        internal TFOperation (TensorflowSharpCore.TFGraph graph, IntPtr handle)
+        internal TFOperation(TFGraph graph, IntPtr handle)
         {
             this.handle = handle;
             this.graph = graph;
         }
 
         // extern const char * TF_OperationName (TF_Operation *oper);
-        [DllImport (NativeBinding.TensorFlowLibrary)]
-        static extern unsafe IntPtr TF_OperationName (TF_Operation oper);
+        [DllImport(NativeBinding.TensorFlowLibrary)]
+        static extern unsafe IntPtr TF_OperationName(TF_Operation oper);
 
         /// <summary>
         /// The name for this operation/
         /// </summary>
         /// <value>The name.</value>
-        public string Name => handle == IntPtr.Zero ? "<ObjectDisposed>" : TF_OperationName (handle).GetStr ();
+        public string Name => handle == IntPtr.Zero ? "<ObjectDisposed>" : TF_OperationName(handle).GetStr();
 
         // extern const char * TF_OperationOpType (TF_Operation *oper);
-        [DllImport (NativeBinding.TensorFlowLibrary)]
-        static extern unsafe IntPtr TF_OperationOpType (TF_Operation oper);
+        [DllImport(NativeBinding.TensorFlowLibrary)]
+        static extern unsafe IntPtr TF_OperationOpType(TF_Operation oper);
 
-        public string OpType => handle == IntPtr.Zero ? "<ObjectDisposedException>" : TF_OperationOpType (handle).GetStr ();
+        public string OpType => handle == IntPtr.Zero ? "<ObjectDisposedException>" : TF_OperationOpType(handle).GetStr();
 
         // extern const char * TF_OperationDevice (TF_Operation *oper);
-        [DllImport (NativeBinding.TensorFlowLibrary)]
-        static extern unsafe IntPtr TF_OperationDevice (TF_Operation oper);
+        [DllImport(NativeBinding.TensorFlowLibrary)]
+        static extern unsafe IntPtr TF_OperationDevice(TF_Operation oper);
 
         // public string Device => TF_OperationDevice (handle).GetStr ();
 
         // extern int TF_OperationNumOutputs (TF_Operation *oper);
-        [DllImport (NativeBinding.TensorFlowLibrary)]
-        static extern unsafe int TF_OperationNumOutputs (TF_Operation oper);
+        [DllImport(NativeBinding.TensorFlowLibrary)]
+        static extern unsafe int TF_OperationNumOutputs(TF_Operation oper);
 
         /// <summary>
         /// Gets the number of outputs on this operation.
         /// </summary>
         /// <value>The number outputs.</value>
-        public int NumOutputs => handle == IntPtr.Zero ? -1 : TF_OperationNumOutputs (handle);
+        public int NumOutputs => handle == IntPtr.Zero ? -1 : TF_OperationNumOutputs(handle);
 
 
         // extern int TF_OperationOutputListLength (TF_Operation *oper, const char *arg_name, TF_Status *status);
-        [DllImport (NativeBinding.TensorFlowLibrary)]
-        static extern unsafe int TF_OperationOutputListLength (TF_Operation oper, string arg_name, TF_Status status);
+        [DllImport(NativeBinding.TensorFlowLibrary)]
+        static extern unsafe int TF_OperationOutputListLength(TF_Operation oper, string arg_name, TF_Status status);
 
-        public int OutputListLength (string argName, TFStatus status = null)
+        public int OutputListLength(string argName, TFStatus status = null)
         {
             if (handle == IntPtr.Zero)
-                TFDisposable.ObjectDisposedException ();
-            var cstatus = TFStatus.Setup (status);
-            var res = TF_OperationOutputListLength (handle, argName, cstatus.handle);
-            cstatus.CheckMaybeRaise (status);
+                TFDisposable.ObjectDisposedException();
+            var cstatus = TFStatus.Setup(status);
+            var res = TF_OperationOutputListLength(handle, argName, cstatus.handle);
+            cstatus.CheckMaybeRaise(status);
             return res;
         }
 
         // extern int TF_OperationNumInputs (TF_Operation *oper);
-        [DllImport (NativeBinding.TensorFlowLibrary)]
-        static extern unsafe int TF_OperationNumInputs (TF_Operation oper);
+        [DllImport(NativeBinding.TensorFlowLibrary)]
+        static extern unsafe int TF_OperationNumInputs(TF_Operation oper);
 
         /// <summary>
         /// Gets the number of inputs for this operation.
         /// </summary>
         /// <value>The number inputs.</value>
-        public int NumInputs => TF_OperationNumInputs (handle);
+        public int NumInputs => TF_OperationNumInputs(handle);
 
 
         // extern int TF_OperationInputListLength (TF_Operation *oper, const char *arg_name, TF_Status *status);
-        [DllImport (NativeBinding.TensorFlowLibrary)]
-        static extern unsafe int TF_OperationInputListLength (TF_Operation oper, string arg_name, TF_Status status);
+        [DllImport(NativeBinding.TensorFlowLibrary)]
+        static extern unsafe int TF_OperationInputListLength(TF_Operation oper, string arg_name, TF_Status status);
 
-        public int InputListLength (string argName, TFStatus status = null)
+        public int InputListLength(string argName, TFStatus status = null)
         {
             if (handle == IntPtr.Zero)
-                TFDisposable.ObjectDisposedException ();
-            var cstatus = TFStatus.Setup (status);
-            var res = TF_OperationInputListLength (handle, argName, cstatus.handle);
-            cstatus.CheckMaybeRaise (status);
+                TFDisposable.ObjectDisposedException();
+            var cstatus = TFStatus.Setup(status);
+            var res = TF_OperationInputListLength(handle, argName, cstatus.handle);
+            cstatus.CheckMaybeRaise(status);
             return res;
         }
 
         // extern int TF_OperationNumControlInputs (TF_Operation *oper);
-        [DllImport (NativeBinding.TensorFlowLibrary)]
-        static extern unsafe int TF_OperationNumControlInputs (TF_Operation oper);
-        public int NumControlInputs => TF_OperationNumControlInputs (handle);
+        [DllImport(NativeBinding.TensorFlowLibrary)]
+        static extern unsafe int TF_OperationNumControlInputs(TF_Operation oper);
+        public int NumControlInputs => TF_OperationNumControlInputs(handle);
 
         // extern int TF_OperationGetControlInputs (TF_Operation *oper, TF_Operation **control_inputs, int max_control_inputs);
-        [DllImport (NativeBinding.TensorFlowLibrary)]
-        static extern unsafe int TF_OperationGetControlInputs (TF_Operation oper, TF_Operation control_inputs, int max_control_inputs);
+        [DllImport(NativeBinding.TensorFlowLibrary)]
+        static extern unsafe int TF_OperationGetControlInputs(TF_Operation oper, TF_Operation control_inputs, int max_control_inputs);
 
         // extern int TF_OperationNumControlOutputs (TF_Operation *oper);
-        [DllImport (NativeBinding.TensorFlowLibrary)]
-        static extern unsafe int TF_OperationNumControlOutputs (TF_Operation oper);
-        public int NumControlOutputs => TF_OperationNumControlOutputs (handle);
+        [DllImport(NativeBinding.TensorFlowLibrary)]
+        static extern unsafe int TF_OperationNumControlOutputs(TF_Operation oper);
+        public int NumControlOutputs => TF_OperationNumControlOutputs(handle);
 
         // extern int TF_OperationGetControlOutputs (TF_Operation *oper, TF_Operation **control_outputs, int max_control_outputs);
-        [DllImport (NativeBinding.TensorFlowLibrary)]
-        static extern unsafe int TF_OperationGetControlOutputs (TF_Operation oper, [Out] [MarshalAs (UnmanagedType.LPArray, SizeParamIndex = 2)] IntPtr [] control_outputs, int max_control_outputs);
+        [DllImport(NativeBinding.TensorFlowLibrary)]
+        static extern unsafe int TF_OperationGetControlOutputs(TF_Operation oper, [Out] [MarshalAs(UnmanagedType.LPArray, SizeParamIndex = 2)] IntPtr[] control_outputs, int max_control_outputs);
 
-        TFOperation [] ControlOutputs {
-            get {
+        TFOperation[] ControlOutputs
+        {
+            get
+            {
                 var n = NumControlOutputs;
-                var arr = new IntPtr [n];
-                TF_OperationGetControlOutputs (handle, arr, n);
-                var ret = new TFOperation [n];
+                var arr = new IntPtr[n];
+                TF_OperationGetControlOutputs(handle, arr, n);
+                var ret = new TFOperation[n];
                 for (int i = 0; i < n; i++)
-                    ret [i] = new TFOperation (graph, arr [i]);
+                    ret[i] = new TFOperation(graph, arr[i]);
                 return ret;
             }
         }
 
         // extern TF_AttrMetadata TF_OperationGetAttrMetadata (TF_Operation *oper, const char *attr_name, TF_Status *status);
-        [DllImport (NativeBinding.TensorFlowLibrary)]
-        static extern unsafe TFAttributeMetadata TF_OperationGetAttrMetadata (TF_Operation oper, string attr_name, TF_Status status);
+        [DllImport(NativeBinding.TensorFlowLibrary)]
+        static extern unsafe TFAttributeMetadata TF_OperationGetAttrMetadata(TF_Operation oper, string attr_name, TF_Status status);
 
-        public TFAttributeMetadata GetAttributeMetadata (string attrName, TFStatus status = null)
+        public TFAttributeMetadata GetAttributeMetadata(string attrName, TFStatus status = null)
         {
             if (handle == IntPtr.Zero)
-                TFDisposable.ObjectDisposedException ();
-            var cstatus = TFStatus.Setup (status);
-            var x = TF_OperationGetAttrMetadata (handle, attrName, cstatus.handle);
-            cstatus.CheckMaybeRaise (status);
+                TFDisposable.ObjectDisposedException();
+            var cstatus = TFStatus.Setup(status);
+            var x = TF_OperationGetAttrMetadata(handle, attrName, cstatus.handle);
+            cstatus.CheckMaybeRaise(status);
             return x;
         }
 
         // extern void TF_OperationGetAttrString (TF_Operation *oper, const char *attr_name, void *value, size_t max_length, TF_Status *status);
-        [DllImport (NativeBinding.TensorFlowLibrary)]
-        static extern unsafe void TF_OperationGetAttrString (TF_Operation oper, string attr_name, void* value, size_t max_length, TF_Status status);
+        [DllImport(NativeBinding.TensorFlowLibrary)]
+        static extern unsafe void TF_OperationGetAttrString(TF_Operation oper, string attr_name, void* value, size_t max_length, TF_Status status);
         // TODO:
 
         // extern void TF_OperationGetAttrStringList (TF_Operation *oper, const char *attr_name, void **values, size_t *lengths, int max_values, void *storage, size_t storage_size, TF_Status *status);
-        [DllImport (NativeBinding.TensorFlowLibrary)]
-        static extern unsafe void TF_OperationGetAttrStringList (TF_Operation oper, string attr_name, void** values, size_t* lengths, int max_values, void* storage, size_t storage_size, TF_Status status);
+        [DllImport(NativeBinding.TensorFlowLibrary)]
+        static extern unsafe void TF_OperationGetAttrStringList(TF_Operation oper, string attr_name, void** values, size_t* lengths, int max_values, void* storage, size_t storage_size, TF_Status status);
         // TODO:
 
         // extern void TF_OperationGetAttrInt (TF_Operation *oper, const char *attr_name, int64_t *value, TF_Status *status);
-        [DllImport (NativeBinding.TensorFlowLibrary)]
-        static extern unsafe void TF_OperationGetAttrInt (TF_Operation oper, string attr_name, long* value, TF_Status status);
+        [DllImport(NativeBinding.TensorFlowLibrary)]
+        static extern unsafe void TF_OperationGetAttrInt(TF_Operation oper, string attr_name, long* value, TF_Status status);
         // TODO:
 
         // extern void TF_OperationGetAttrIntList (TF_Operation *oper, const char *attr_name, int64_t *values, int max_values, TF_Status *status);
-        [DllImport (NativeBinding.TensorFlowLibrary)]
-        static extern unsafe void TF_OperationGetAttrIntList (TF_Operation oper, string attr_name, long* values, int max_values, TF_Status status);
+        [DllImport(NativeBinding.TensorFlowLibrary)]
+        static extern unsafe void TF_OperationGetAttrIntList(TF_Operation oper, string attr_name, long* values, int max_values, TF_Status status);
         // TODO:
 
         // extern void TF_OperationGetAttrFloat (TF_Operation *oper, const char *attr_name, float *value, TF_Status *status);
-        [DllImport (NativeBinding.TensorFlowLibrary)]
-        static extern unsafe void TF_OperationGetAttrFloat (TF_Operation oper, string attr_name, float* value, TF_Status status);
+        [DllImport(NativeBinding.TensorFlowLibrary)]
+        static extern unsafe void TF_OperationGetAttrFloat(TF_Operation oper, string attr_name, float* value, TF_Status status);
         // TODO:
 
         // extern void TF_OperationGetAttrFloatList (TF_Operation *oper, const char *attr_name, float *values, int max_values, TF_Status *status);
-        [DllImport (NativeBinding.TensorFlowLibrary)]
-        static extern unsafe void TF_OperationGetAttrFloatList (TF_Operation oper, string attr_name, float* values, int max_values, TF_Status status);
+        [DllImport(NativeBinding.TensorFlowLibrary)]
+        static extern unsafe void TF_OperationGetAttrFloatList(TF_Operation oper, string attr_name, float* values, int max_values, TF_Status status);
         // TODO:
 
         // extern void TF_OperationGetAttrBool (TF_Operation *oper, const char *attr_name, unsigned char *value, TF_Status *status);
-        [DllImport (NativeBinding.TensorFlowLibrary)]
-        static extern unsafe void TF_OperationGetAttrBool (TF_Operation oper, string attr_name, byte* value, TF_Status status);
+        [DllImport(NativeBinding.TensorFlowLibrary)]
+        static extern unsafe void TF_OperationGetAttrBool(TF_Operation oper, string attr_name, byte* value, TF_Status status);
         // TODO:
 
         // extern void TF_OperationGetAttrBoolList (TF_Operation *oper, const char *attr_name, unsigned char *values, int max_values, TF_Status *status);
-        [DllImport (NativeBinding.TensorFlowLibrary)]
-        static extern unsafe void TF_OperationGetAttrBoolList (TF_Operation oper, string attr_name, byte* values, int max_values, TF_Status status);
+        [DllImport(NativeBinding.TensorFlowLibrary)]
+        static extern unsafe void TF_OperationGetAttrBoolList(TF_Operation oper, string attr_name, byte* values, int max_values, TF_Status status);
         // TODO:
 
         // extern void TF_OperationGetAttrType (TF_Operation *oper, const char *attr_name, TF_DataType *value, TF_Status *status);
-        [DllImport (NativeBinding.TensorFlowLibrary)]
-        static extern unsafe void TF_OperationGetAttrType (TF_Operation oper, string attr_name, TFDataType* value, TF_Status status);
+        [DllImport(NativeBinding.TensorFlowLibrary)]
+        static extern unsafe void TF_OperationGetAttrType(TF_Operation oper, string attr_name, TFDataType* value, TF_Status status);
         // TODO:
 
         // extern void TF_OperationGetAttrTypeList (TF_Operation *oper, const char *attr_name, TF_DataType *values, int max_values, TF_Status *status);
-        [DllImport (NativeBinding.TensorFlowLibrary)]
-        static extern unsafe void TF_OperationGetAttrTypeList (TF_Operation oper, string attr_name, TFDataType* values, int max_values, TF_Status status);
+        [DllImport(NativeBinding.TensorFlowLibrary)]
+        static extern unsafe void TF_OperationGetAttrTypeList(TF_Operation oper, string attr_name, TFDataType* values, int max_values, TF_Status status);
         // TODO:
 
         // extern void TF_OperationGetAttrShape (TF_Operation *oper, const char *attr_name, int64_t *value, int num_dims, TF_Status *status);
-        [DllImport (NativeBinding.TensorFlowLibrary)]
-        static extern unsafe void TF_OperationGetAttrShape (TF_Operation oper, string attr_name, long* value, int num_dims, TF_Status status);
+        [DllImport(NativeBinding.TensorFlowLibrary)]
+        static extern unsafe void TF_OperationGetAttrShape(TF_Operation oper, string attr_name, long* value, int num_dims, TF_Status status);
         // TODO:
 
         // extern void TF_OperationGetAttrShapeList (TF_Operation *oper, const char *attr_name, int64_t **dims, int *num_dims, int num_shapes, int64_t *storage, int storage_size, TF_Status *status);
-        [DllImport (NativeBinding.TensorFlowLibrary)]
-        static extern unsafe void TF_OperationGetAttrShapeList (TF_Operation oper, string attr_name, long** dims, int* num_dims, int num_shapes, long* storage, int storage_size, TF_Status status);
+        [DllImport(NativeBinding.TensorFlowLibrary)]
+        static extern unsafe void TF_OperationGetAttrShapeList(TF_Operation oper, string attr_name, long** dims, int* num_dims, int num_shapes, long* storage, int storage_size, TF_Status status);
         // TODO:
 
         // extern void TF_OperationGetAttrTensorShapeProto (TF_Operation *oper, const char *attr_name, TF_Buffer *value, TF_Status *status);
-        [DllImport (NativeBinding.TensorFlowLibrary)]
-        static extern unsafe void TF_OperationGetAttrTensorShapeProto (TF_Operation oper, string attr_name, LLBuffer* value, TF_Status status);
+        [DllImport(NativeBinding.TensorFlowLibrary)]
+        static extern unsafe void TF_OperationGetAttrTensorShapeProto(TF_Operation oper, string attr_name, LLBuffer* value, TF_Status status);
         // TODO:
 
         // extern void TF_OperationGetAttrTensorShapeProtoList (TF_Operation *oper, const char *attr_name, TF_Buffer **values, int max_values, TF_Status *status);
-        [DllImport (NativeBinding.TensorFlowLibrary)]
-        static extern unsafe void TF_OperationGetAttrTensorShapeProtoList (TF_Operation oper, string attr_name, LLBuffer** values, int max_values, TF_Status status);
+        [DllImport(NativeBinding.TensorFlowLibrary)]
+        static extern unsafe void TF_OperationGetAttrTensorShapeProtoList(TF_Operation oper, string attr_name, LLBuffer** values, int max_values, TF_Status status);
         // TODO:
 
         // extern void TF_OperationGetAttrTensor (TF_Operation *oper, const char *attr_name, TF_Tensor **value, TF_Status *status);
-        [DllImport (NativeBinding.TensorFlowLibrary)]
-        static extern unsafe void TF_OperationGetAttrTensor (TF_Operation oper, string attr_name, TF_Tensor* value, TF_Status status);
+        [DllImport(NativeBinding.TensorFlowLibrary)]
+        static extern unsafe void TF_OperationGetAttrTensor(TF_Operation oper, string attr_name, TF_Tensor* value, TF_Status status);
         // TODO:
 
         // extern void TF_OperationGetAttrTensorList (TF_Operation *oper, const char *attr_name, TF_Tensor **values, int max_values, TF_Status *status);
-        [DllImport (NativeBinding.TensorFlowLibrary)]
-        static extern unsafe void TF_OperationGetAttrTensorList (TF_Operation oper, string attr_name, TF_Tensor* values, int max_values, TF_Status status);
+        [DllImport(NativeBinding.TensorFlowLibrary)]
+        static extern unsafe void TF_OperationGetAttrTensorList(TF_Operation oper, string attr_name, TF_Tensor* values, int max_values, TF_Status status);
         // TODO:
 
         // extern void TF_OperationGetAttrValueProto (TF_Operation *oper, const char *attr_name, TF_Buffer *output_attr_value, TF_Status *status);
-        [DllImport (NativeBinding.TensorFlowLibrary)]
-        static extern unsafe void TF_OperationGetAttrValueProto (TF_Operation oper, string attr_name, LLBuffer* output_attr_value, TF_Status status);
+        [DllImport(NativeBinding.TensorFlowLibrary)]
+        static extern unsafe void TF_OperationGetAttrValueProto(TF_Operation oper, string attr_name, LLBuffer* output_attr_value, TF_Status status);
         // TODO:
 
 
         // extern void TF_OperationToNodeDef (TF_Operation *oper, TF_Buffer *output_node_def, TF_Status *status);
-        [DllImport (NativeBinding.TensorFlowLibrary)]
-        static extern unsafe void TF_OperationToNodeDef (TF_Operation oper, LLBuffer* output_node_def, TF_Status status);
+        [DllImport(NativeBinding.TensorFlowLibrary)]
+        static extern unsafe void TF_OperationToNodeDef(TF_Operation oper, LLBuffer* output_node_def, TF_Status status);
 
         /// <summary>
         /// Encodes the TFOperation as a protocol buffer payload
@@ -1755,19 +1790,20 @@ namespace TensorflowSharpCore
         /// <param name="status">Status buffer, if specified a status code will be left here, if not specified, a <see cref="T:TensorFlow.TFException"/> exception is raised if there is an error.</param>
         /// <remarks>
         /// </remarks>
-        public TFBuffer ToNodeDef (TFStatus status = null)
+        public TFBuffer ToNodeDef(TFStatus status = null)
         {
             if (handle == IntPtr.Zero)
-                TFDisposable.ObjectDisposedException ();
-            var cstatus = TFStatus.Setup (status);
-            var r = new TFBuffer ();
+                TFDisposable.ObjectDisposedException();
+            var cstatus = TFStatus.Setup(status);
+            var r = new TFBuffer();
             unsafe
             {
-                TF_OperationToNodeDef (handle, r.LLBuffer, cstatus.handle);
+                TF_OperationToNodeDef(handle, r.LLBuffer, cstatus.handle);
             }
             // No need to raise, we can return null in that case.
-            if (!cstatus.Ok) {
-                r.Dispose ();
+            if (!cstatus.Ok)
+            {
+                r.Dispose();
                 return null;
             }
             return r;
@@ -1777,9 +1813,11 @@ namespace TensorflowSharpCore
         /// Returns the handle to the idx-th output of the operation.
         /// </summary>
         /// <param name="idx">Index of the output in the operation.</param>
-        public TFOutput this [int idx] {
-            get {
-                return new TFOutput (this, idx);
+        public TFOutput this[int idx]
+        {
+            get
+            {
+                return new TFOutput(this, idx);
             }
         }
     }
@@ -1790,36 +1828,36 @@ namespace TensorflowSharpCore
     public class TFImportGraphDefOptions : TFDisposable
     {
         // extern TF_ImportGraphDefOptions * TF_NewImportGraphDefOptions ();
-        [DllImport (NativeBinding.TensorFlowLibrary)]
-        static extern unsafe TF_ImportGraphDefOptions TF_NewImportGraphDefOptions ();
+        [DllImport(NativeBinding.TensorFlowLibrary)]
+        static extern unsafe TF_ImportGraphDefOptions TF_NewImportGraphDefOptions();
 
-        public TFImportGraphDefOptions () : base (TF_NewImportGraphDefOptions ())
+        public TFImportGraphDefOptions() : base(TF_NewImportGraphDefOptions())
         {
         }
 
         // extern void TF_DeleteImportGraphDefOptions (TF_ImportGraphDefOptions *opts);
-        [DllImport (NativeBinding.TensorFlowLibrary)]
-        static extern unsafe void TF_DeleteImportGraphDefOptions (TF_ImportGraphDefOptions opts);
+        [DllImport(NativeBinding.TensorFlowLibrary)]
+        static extern unsafe void TF_DeleteImportGraphDefOptions(TF_ImportGraphDefOptions opts);
 
-        internal override void NativeDispose (IntPtr handle)
+        internal override void NativeDispose(IntPtr handle)
         {
-            TF_DeleteImportGraphDefOptions (handle);
+            TF_DeleteImportGraphDefOptions(handle);
         }
 
         // extern void TF_ImportGraphDefOptionsSetPrefix (TF_ImportGraphDefOptions *opts, const char *prefix);
-        [DllImport (NativeBinding.TensorFlowLibrary)]
-        static extern unsafe void TF_ImportGraphDefOptionsSetPrefix (TF_ImportGraphDefOptions opts, string prefix);
+        [DllImport(NativeBinding.TensorFlowLibrary)]
+        static extern unsafe void TF_ImportGraphDefOptionsSetPrefix(TF_ImportGraphDefOptions opts, string prefix);
 
-        public void SetPrefix (string prefix)
+        public void SetPrefix(string prefix)
         {
             if (handle == IntPtr.Zero)
-                ObjectDisposedException ();			
-            TF_ImportGraphDefOptionsSetPrefix (handle, prefix);
+                ObjectDisposedException();
+            TF_ImportGraphDefOptionsSetPrefix(handle, prefix);
         }
 
         // extern void TF_ImportGraphDefOptionsAddInputMapping (TF_ImportGraphDefOptions *opts, const char* src_name, int src_index, TF_Output dst);
-        [DllImport (NativeBinding.TensorFlowLibrary)]
-        static extern unsafe void TF_ImportGraphDefOptionsAddInputMapping (TF_ImportGraphDefOptions opts, string src_name, int src_index, TFOutput dst);
+        [DllImport(NativeBinding.TensorFlowLibrary)]
+        static extern unsafe void TF_ImportGraphDefOptionsAddInputMapping(TF_ImportGraphDefOptions opts, string src_name, int src_index, TFOutput dst);
 
 
         /// <summary>
@@ -1833,32 +1871,32 @@ namespace TensorflowSharpCore
         /// replaced with `dst`. `src_name` refers to a node in the graph to be imported,
         /// `dst` references a node already existing in the graph being imported into.
         /// </remarks>
-        public void AddInputMapping (string srcName, int srcIndex, TFOutput dst)
+        public void AddInputMapping(string srcName, int srcIndex, TFOutput dst)
         {
             if (handle == IntPtr.Zero)
-                ObjectDisposedException ();
-            TF_ImportGraphDefOptionsAddInputMapping (handle, srcName, srcIndex, dst);
+                ObjectDisposedException();
+            TF_ImportGraphDefOptionsAddInputMapping(handle, srcName, srcIndex, dst);
         }
 
-        [DllImport (NativeBinding.TensorFlowLibrary)]
-        extern static void TF_ImportGraphDefOptionsAddControlDependency (TF_ImportGraphDefOptions opts, TF_Operation oper);
+        [DllImport(NativeBinding.TensorFlowLibrary)]
+        extern static void TF_ImportGraphDefOptionsAddControlDependency(TF_ImportGraphDefOptions opts, TF_Operation oper);
 
         /// <summary>
         /// Cause the imported graph to have a control dependency on the provided operation.
         /// </summary>
         /// <param name="operation">This operation should exist in the graph being imported to.</param>
-        public void AddControlDependency (TFOperation operation)
+        public void AddControlDependency(TFOperation operation)
         {
             if (operation == null)
-                throw new ArgumentNullException (nameof (operation));
+                throw new ArgumentNullException(nameof(operation));
             if (handle == IntPtr.Zero)
-                ObjectDisposedException ();
-            
-            TF_ImportGraphDefOptionsAddControlDependency (handle, operation.handle);
+                ObjectDisposedException();
+
+            TF_ImportGraphDefOptionsAddControlDependency(handle, operation.handle);
         }
 
-        [DllImport (NativeBinding.TensorFlowLibrary)]
-        extern static void TF_ImportGraphDefOptionsAddReturnOutput (TF_ImportGraphDefOptions opts, string oper_name, int index);
+        [DllImport(NativeBinding.TensorFlowLibrary)]
+        extern static void TF_ImportGraphDefOptionsAddReturnOutput(TF_ImportGraphDefOptions opts, string oper_name, int index);
 
         /// <summary>
         /// Add an output in the graph definition to be returned via the return outputs parameter.
@@ -1869,32 +1907,34 @@ namespace TensorflowSharpCore
         /// If the output is remapped via an input
         /// mapping, the corresponding existing tensor in graph will be returned.
         /// </remarks>
-        public void AddReturnOutput (string operName, int index)
+        public void AddReturnOutput(string operName, int index)
         {
             if (operName == null)
-                throw new ArgumentNullException (nameof (operName));
+                throw new ArgumentNullException(nameof(operName));
             if (handle == IntPtr.Zero)
-                ObjectDisposedException ();
-            TF_ImportGraphDefOptionsAddReturnOutput (handle, operName, index);
+                ObjectDisposedException();
+            TF_ImportGraphDefOptionsAddReturnOutput(handle, operName, index);
         }
 
-        [DllImport (NativeBinding.TensorFlowLibrary)]
-        extern static int TF_ImportGraphDefOptionsNumReturnOutputs (TF_ImportGraphDefOptions opts);
+        [DllImport(NativeBinding.TensorFlowLibrary)]
+        extern static int TF_ImportGraphDefOptionsNumReturnOutputs(TF_ImportGraphDefOptions opts);
 
         /// <summary>
         /// Gets the number return outputs added via AddReturnOutput.
         /// </summary>
         /// <value>The number return outputs.</value>
-        public int NumReturnOutputs {
-            get {
+        public int NumReturnOutputs
+        {
+            get
+            {
                 if (handle == IntPtr.Zero)
-                    ObjectDisposedException ();
-                return TF_ImportGraphDefOptionsNumReturnOutputs (handle);
+                    ObjectDisposedException();
+                return TF_ImportGraphDefOptionsNumReturnOutputs(handle);
             }
         }
 
-        [DllImport (NativeBinding.TensorFlowLibrary)]
-        extern static void TF_ImportGraphDefOptionsRemapControlDependency (TF_ImportGraphDefOptions opts, string srcName, TF_Operation dst);
+        [DllImport(NativeBinding.TensorFlowLibrary)]
+        extern static void TF_ImportGraphDefOptionsRemapControlDependency(TF_ImportGraphDefOptions opts, string srcName, TF_Operation dst);
 
         /// <summary>
         /// Sets any imported nodes with a given control input to have it replaced with an operation
@@ -1905,15 +1945,15 @@ namespace TensorflowSharpCore
         /// Set any imported nodes with control input <paramref name="srcName"/> to have that input
         /// replaced with <paramref name="destination"/>. 
         /// </remarks>
-        public void RemapControlDependency (string srcName, TFOperation destination)
+        public void RemapControlDependency(string srcName, TFOperation destination)
         {
             if (srcName == null)
-                throw new ArgumentNullException (nameof (srcName));
+                throw new ArgumentNullException(nameof(srcName));
             if (destination == null)
-                throw new ArgumentNullException (nameof (destination));
+                throw new ArgumentNullException(nameof(destination));
             if (destination.Handle == IntPtr.Zero)
-                throw new ObjectDisposedException (nameof (destination));
-            TF_ImportGraphDefOptionsRemapControlDependency (handle, srcName, destination.Handle);
+                throw new ObjectDisposedException(nameof(destination));
+            TF_ImportGraphDefOptionsRemapControlDependency(handle, srcName, destination.Handle);
         }
     }
 
@@ -1940,16 +1980,16 @@ namespace TensorflowSharpCore
     public class TFSession : TFDisposable
     {
         // extern TF_Session * TF_NewSession (TF_Graph *graph, const TF_SessionOptions *opts, TF_Status *status);
-        [DllImport (NativeBinding.TensorFlowLibrary)]
-        static extern unsafe TF_Session TF_NewSession (TF_Graph graph, TF_SessionOptions opts, TF_Status status);
+        [DllImport(NativeBinding.TensorFlowLibrary)]
+        static extern unsafe TF_Session TF_NewSession(TF_Graph graph, TF_SessionOptions opts, TF_Status status);
 
         /// <summary>
         /// Gets the graph associated with this TensorFlow session.
         /// </summary>
         /// <value>The graph.</value>
-        public TensorflowSharpCore.TFGraph Graph { get; private set; }
+        public TFGraph Graph { get; private set; }
 
-        TFSession (IntPtr handle, TensorflowSharpCore.TFGraph graph) : base (handle) 
+        TFSession(IntPtr handle, TFGraph graph) : base(handle)
         {
             Graph = graph;
         }
@@ -1960,12 +2000,12 @@ namespace TensorflowSharpCore
         /// <param name="graph">The Graph to which this session is associated.</param>
         /// <param name="sessionOptions">Session options.</param>
         /// <param name="status">Status buffer, if specified a status code will be left here, if not specified, a <see cref="T:TensorFlow.TFException"/> exception is raised if there is an error.</param>
-        public TFSession (TensorflowSharpCore.TFGraph graph, TFSessionOptions sessionOptions, TFStatus status = null) : base (IntPtr.Zero)
+        public TFSession(TFGraph graph, TFSessionOptions sessionOptions, TFStatus status = null) : base(IntPtr.Zero)
         {
             Graph = graph;
-            var cstatus = TFStatus.Setup (status);
-            var h = TF_NewSession (graph.handle, sessionOptions.handle, cstatus.handle);
-            cstatus.CheckMaybeRaise (status);
+            var cstatus = TFStatus.Setup(status);
+            var h = TF_NewSession(graph.handle, sessionOptions.handle, cstatus.handle);
+            cstatus.CheckMaybeRaise(status);
             handle = h;
         }
 
@@ -1974,14 +2014,14 @@ namespace TensorflowSharpCore
         /// </summary>
         /// <param name="graph">The Graph to which this session is associated.</param>
         /// <param name="status">Status buffer, if specified a status code will be left here, if not specified, a <see cref="T:TensorFlow.TFException"/> exception is raised if there is an error.</param>
-        public TFSession (TensorflowSharpCore.TFGraph graph, TFStatus status = null) : base (IntPtr.Zero)
+        public TFSession(TFGraph graph, TFStatus status = null) : base(IntPtr.Zero)
         {
             Graph = graph;
-            var cstatus = TFStatus.Setup (status);
-            var empty = TFSessionOptions.TF_NewSessionOptions ();
-            var h = TF_NewSession (graph.handle, empty, cstatus.handle);
-            TFSessionOptions.TF_DeleteSessionOptions (empty);
-            cstatus.CheckMaybeRaise (status);
+            var cstatus = TFStatus.Setup(status);
+            var empty = TFSessionOptions.TF_NewSessionOptions();
+            var h = TF_NewSession(graph.handle, empty, cstatus.handle);
+            TFSessionOptions.TF_DeleteSessionOptions(empty);
+            cstatus.CheckMaybeRaise(status);
             handle = h;
         }
 
@@ -1992,13 +2032,13 @@ namespace TensorflowSharpCore
         /// <remarks>
         /// The created graph can be retrieved using the Graph property on the session.
         /// </remarks>
-        public TFSession (TFStatus status = null) : this (new TensorflowSharpCore.TFGraph (), status)
+        public TFSession(TFStatus status = null) : this(new TFGraph(), status)
         {
         }
 
         // extern TF_Session * TF_LoadSessionFromSavedModel (const TF_SessionOptions *session_options, const TF_Buffer *run_options, const char *export_dir, const char *const *tags, int tags_len, TF_Graph *graph, TF_Buffer *meta_graph_def, TF_Status *status);
-        [DllImport (NativeBinding.TensorFlowLibrary)]
-        static extern unsafe TF_Session TF_LoadSessionFromSavedModel (TF_SessionOptions session_options, LLBuffer* run_options, string export_dir, string [] tags, int tags_len, TF_Graph graph, LLBuffer* meta_graph_def, TF_Status status);
+        [DllImport(NativeBinding.TensorFlowLibrary)]
+        static extern unsafe TF_Session TF_LoadSessionFromSavedModel(TF_SessionOptions session_options, LLBuffer* run_options, string export_dir, string[] tags, int tags_len, TF_Graph graph, LLBuffer* meta_graph_def, TF_Status status);
 
         /// <summary>
         /// Creates a session and graph from a saved session model
@@ -2015,31 +2055,32 @@ namespace TensorflowSharpCore
         /// This function creates a new session using the specified <paramref name="sessionOptions"/> and then initializes
         /// the state (restoring tensors and other assets) using <paramref name="runOptions"/>
         /// </remarks>
-        public TFSession FromSavedModel (TFSessionOptions sessionOptions, TFBuffer runOptions, string exportDir, string [] tags, TensorflowSharpCore.TFGraph graph, TFBuffer metaGraphDef, TFStatus status = null)
+        public TFSession FromSavedModel(TFSessionOptions sessionOptions, TFBuffer runOptions, string exportDir, string[] tags, TFGraph graph, TFBuffer metaGraphDef, TFStatus status = null)
         {
             if (graph == null)
-                throw new ArgumentNullException (nameof (graph));
+                throw new ArgumentNullException(nameof(graph));
             if (tags == null)
-                throw new ArgumentNullException (nameof (tags));
+                throw new ArgumentNullException(nameof(tags));
             if (exportDir == null)
-                throw new ArgumentNullException (nameof (exportDir));
+                throw new ArgumentNullException(nameof(exportDir));
             if (metaGraphDef == null)
-                throw new ArgumentNullException (nameof (metaGraphDef));
-            var cstatus = TFStatus.Setup (status);
+                throw new ArgumentNullException(nameof(metaGraphDef));
+            var cstatus = TFStatus.Setup(status);
             unsafe
             {
-                var h = TF_LoadSessionFromSavedModel (sessionOptions.handle, runOptions == null ? null : runOptions.LLBuffer, exportDir, tags, tags.Length, graph.handle, metaGraphDef == null ? null : metaGraphDef.LLBuffer, cstatus.handle);
+                var h = TF_LoadSessionFromSavedModel(sessionOptions.handle, runOptions == null ? null : runOptions.LLBuffer, exportDir, tags, tags.Length, graph.handle, metaGraphDef == null ? null : metaGraphDef.LLBuffer, cstatus.handle);
 
-                if (cstatus.CheckMaybeRaise (status)) {
-                    return new TFSession (h, graph);
+                if (cstatus.CheckMaybeRaise(status))
+                {
+                    return new TFSession(h, graph);
                 }
             }
             return null;
         }
 
         // extern void TF_CloseSession (TF_Session *, TF_Status *status);
-        [DllImport (NativeBinding.TensorFlowLibrary)]
-        static extern unsafe void TF_CloseSession (TF_Session session, TF_Status status);
+        [DllImport(NativeBinding.TensorFlowLibrary)]
+        static extern unsafe void TF_CloseSession(TF_Session session, TF_Status status);
 
         /// <summary>
         /// Closes the session.  Contacts any other processes associated with the session, if applicable.
@@ -2048,38 +2089,39 @@ namespace TensorflowSharpCore
         /// <remarks>
         /// Can not be called after calling DeleteSession.
         /// </remarks>
-        public void CloseSession (TFStatus status = null)
+        public void CloseSession(TFStatus status = null)
         {
             if (handle == IntPtr.Zero)
-                ObjectDisposedException ();
-            var cstatus = TFStatus.Setup (status);
-            TF_CloseSession (handle, cstatus.handle);
-            cstatus.CheckMaybeRaise (status);
+                ObjectDisposedException();
+            var cstatus = TFStatus.Setup(status);
+            TF_CloseSession(handle, cstatus.handle);
+            cstatus.CheckMaybeRaise(status);
         }
 
         // extern void TF_DeleteSession (TF_Session *, TF_Status *status);
-        [DllImport (NativeBinding.TensorFlowLibrary)]
-        static extern unsafe void TF_DeleteSession (TF_Session session, TF_Status status);
+        [DllImport(NativeBinding.TensorFlowLibrary)]
+        static extern unsafe void TF_DeleteSession(TF_Session session, TF_Status status);
 
-        public void DeleteSession (TFStatus status = null)
+        public void DeleteSession(TFStatus status = null)
         {
             if (handle == IntPtr.Zero)
-                ObjectDisposedException ();			
-            var cstatus = TFStatus.Setup (status);
-            TF_DeleteSession (handle, cstatus.handle);
-            cstatus.CheckMaybeRaise (status);
+                ObjectDisposedException();
+            var cstatus = TFStatus.Setup(status);
+            TF_DeleteSession(handle, cstatus.handle);
+            cstatus.CheckMaybeRaise(status);
         }
 
-        internal override void NativeDispose (IntPtr handle)
+        internal override void NativeDispose(IntPtr handle)
         {
-            using (var s = new TFStatus ()) {
-                TF_DeleteSession (handle, s.handle);
+            using (var s = new TFStatus())
+            {
+                TF_DeleteSession(handle, s.handle);
             }
         }
 
         // extern void TF_SessionRun (TF_Session *session, const TF_Buffer *run_options, const TF_Output *inputs, TF_Tensor *const *input_values, int ninputs, const TF_Output *outputs, TF_Tensor **output_values, int noutputs, const TF_Operation *const *target_opers, int ntargets, TF_Buffer *run_metadata, TF_Status *);
-        [DllImport (NativeBinding.TensorFlowLibrary)]
-        static extern unsafe void TF_SessionRun (TF_Session session, LLBuffer* run_options, TFOutput [] inputs, TF_Tensor [] input_values, int ninputs, TFOutput [] outputs, TF_Tensor [] output_values, int noutputs, TF_Operation [] target_opers, int ntargets, LLBuffer* run_metadata, TF_Status status);
+        [DllImport(NativeBinding.TensorFlowLibrary)]
+        static extern unsafe void TF_SessionRun(TF_Session session, LLBuffer* run_options, TFOutput[] inputs, TF_Tensor[] input_values, int ninputs, TFOutput[] outputs, TF_Tensor[] output_values, int noutputs, TF_Operation[] target_opers, int ntargets, LLBuffer* run_metadata, TF_Status status);
 
 
         /// <summary>
@@ -2112,12 +2154,12 @@ namespace TensorflowSharpCore
         /// </remarks>
         public class Runner
         {
-            List<TFOutput> inputs = new List<TFOutput> (), outputs = new List<TFOutput> ();
-            List<TFTensor> inputValues = new List<TFTensor> ();
-            List<TFOperation> targets = new List<TFOperation> ();
+            List<TFOutput> inputs = new List<TFOutput>(), outputs = new List<TFOutput>();
+            List<TFTensor> inputValues = new List<TFTensor>();
+            List<TFOperation> targets = new List<TFOperation>();
             TFSession session;
 
-            internal Runner (TFSession session)
+            internal Runner(TFSession session)
             {
                 this.session = session;
             }
@@ -2128,12 +2170,12 @@ namespace TensorflowSharpCore
             /// <returns>An instance to the runner, so you can easily chain the operations together.</returns>
             /// <param name="input">Incoming port.</param>
             /// <param name="value">Value to assing to the incoming port.</param>
-            public Runner AddInput (TFOutput input, TFTensor value)
+            public Runner AddInput(TFOutput input, TFTensor value)
             {
                 if (value == null)
-                    throw new ArgumentNullException (nameof (value));
-                inputs.Add (input);
-                inputValues.Add (value);
+                    throw new ArgumentNullException(nameof(value));
+                inputs.Add(input);
+                inputValues.Add(value);
                 return this;
             }
 
@@ -2143,12 +2185,12 @@ namespace TensorflowSharpCore
             /// <returns>An instance to the runner, so you can easily chain the operations together.</returns>
             /// <param name="input">Incoming port, with an optional index separated by a colon.</param>
             /// <param name="value">Value to assing to the incoming port.</param>
-            public Runner AddInput (string input, TFTensor value)
+            public Runner AddInput(string input, TFTensor value)
             {
                 if (value == null)
-                    throw new ArgumentNullException (nameof (value));
-                inputs.Add (ParseOutput (input));
-                inputValues.Add (value);
+                    throw new ArgumentNullException(nameof(value));
+                inputs.Add(ParseOutput(input));
+                inputValues.Add(value);
                 return this;
             }
 
@@ -2157,25 +2199,27 @@ namespace TensorflowSharpCore
             /// </summary>
             /// <returns>An instance to the runner, so you can easily chain the operations together.</returns>
             /// <param name="targets">One or more targets.</param>
-            public Runner AddTarget (params TFOperation [] targets)
+            public Runner AddTarget(params TFOperation[] targets)
             {
                 foreach (var t in targets)
-                    this.targets.Add (t);
+                    this.targets.Add(t);
                 return this;
             }
 
 
             // Parses user strings that contain both the operation name and an index.
-            TFOutput ParseOutput (string operation)
+            TFOutput ParseOutput(string operation)
             {
-                var p = operation.IndexOf (':');
-                if (p != -1 && p != operation.Length - 1){
-                    var op = operation.Substring (0, p);
-                    if (int.TryParse (operation.Substring (p + 1), out var idx)){
-                        return session.Graph [op] [idx];
+                var p = operation.IndexOf(':');
+                if (p != -1 && p != operation.Length - 1)
+                {
+                    var op = operation.Substring(0, p);
+                    if (int.TryParse(operation.Substring(p + 1), out var idx))
+                    {
+                        return session.Graph[op][idx];
                     }
                 }
-                return session.Graph [operation] [0];
+                return session.Graph[operation][0];
             }
 
             /// <summary>
@@ -2183,10 +2227,10 @@ namespace TensorflowSharpCore
             /// </summary>
             /// <returns>An instance to the runner, so you can easily chain the operations together.</returns>
             /// <param name="targetNames">One or more target names.</param>
-            public Runner AddTarget (params string [] targetNames)
+            public Runner AddTarget(params string[] targetNames)
             {
                 foreach (var tn in targetNames)
-                    this.targets.Add (session.Graph [tn]);
+                    this.targets.Add(session.Graph[tn]);
                 return this;
             }
 
@@ -2196,10 +2240,10 @@ namespace TensorflowSharpCore
             /// <returns>The instance of runner, to allow chaining operations.</returns>
             /// <param name="operation">The name of the operation in the graph.</param>
             /// <param name="index">The index of the output in the operation.</param>
-            public Runner Fetch (string operation, int index)
+            public Runner Fetch(string operation, int index)
             {
-                var op = session.Graph [operation];
-                outputs.Add (op [index]);
+                var op = session.Graph[operation];
+                outputs.Add(op[index]);
                 return this;
             }
 
@@ -2209,10 +2253,10 @@ namespace TensorflowSharpCore
             /// <returns>The instance of runner, to allow chaining operations.</returns>
             /// <param name="operation">The name of the operation in the graph, which might be a simple name, or it might be name:index, 
             /// where the index is the .</param>
-            public Runner Fetch (string operation)
+            public Runner Fetch(string operation)
             {
-                var op = ParseOutput (operation);
-                outputs.Add (op);
+                var op = ParseOutput(operation);
+                outputs.Add(op);
                 return this;
             }
 
@@ -2221,9 +2265,9 @@ namespace TensorflowSharpCore
             /// </summary>
             /// <returns>The instance of runner, to allow chaining operations.</returns>
             /// <param name="output">The output referencing a specified tensor.</param>
-            public Runner Fetch (TFOutput output)
+            public Runner Fetch(TFOutput output)
             {
-                outputs.Add (output);
+                outputs.Add(output);
                 return this;
             }
 
@@ -2232,10 +2276,10 @@ namespace TensorflowSharpCore
             /// </summary>
             /// <returns>The instance of runner, to allow chaining operations.</returns>
             /// <param name="outputs">The outputs referencing a specified tensor.</param>
-            public Runner Fetch (params TFOutput [] outputs)
+            public Runner Fetch(params TFOutput[] outputs)
             {
                 foreach (var output in outputs)
-                    this.outputs.Add (output);
+                    this.outputs.Add(output);
                 return this;
             }
 
@@ -2244,10 +2288,10 @@ namespace TensorflowSharpCore
             /// </summary>
             /// <returns>The instance of runner, to allow chaining operations.</returns>
             /// <param name="outputs">The output sreferencing a specified tensor.</param>
-            public Runner Fetch (params string [] outputs)
+            public Runner Fetch(params string[] outputs)
             {
                 foreach (var output in outputs)
-                    this.outputs.Add (ParseOutput (output));
+                    this.outputs.Add(ParseOutput(output));
                 return this;
             }
 
@@ -2266,9 +2310,9 @@ namespace TensorflowSharpCore
             /// </summary>
             /// <returns>One TFTensor for each call to Fetch that you made, in the order that you made them.</returns>
             /// <param name="status">Status buffer, if specified a status code will be left here, if not specified, a <see cref="T:TensorFlow.TFException"/> exception is raised if there is an error.</param>
-            public TFTensor [] Run (TFStatus status = null)
+            public TFTensor[] Run(TFStatus status = null)
             {
-                return session.Run (inputs.ToArray (), inputValues.ToArray (), outputs.ToArray (), targets.ToArray (), RunMetadata, RunOptions, status);
+                return session.Run(inputs.ToArray(), inputValues.ToArray(), outputs.ToArray(), targets.ToArray(), RunMetadata, RunOptions, status);
             }
 
             /// <summary>
@@ -2281,11 +2325,11 @@ namespace TensorflowSharpCore
             /// calls that you might have done to Fetch() and use the specified operation to Fetch
             /// instead.
             /// </remarks>
-            public TFTensor  Run (TFOutput operation, TFStatus status = null)
+            public TFTensor Run(TFOutput operation, TFStatus status = null)
             {
-                outputs.Clear ();
-                Fetch (operation);
-                return Run (status) [0];
+                outputs.Clear();
+                Fetch(operation);
+                return Run(status)[0];
             }
 
         }
@@ -2300,9 +2344,9 @@ namespace TensorflowSharpCore
         /// 
         /// The Run method will return an array of TFTensor values, one for each invocation to the Fetch method.
         /// </remarks>
-        public Runner GetRunner ()
+        public Runner GetRunner()
         {
-            return new Runner (this);
+            return new Runner(this);
         }
 
         /// <summary>
@@ -2318,58 +2362,60 @@ namespace TensorflowSharpCore
         /// <param name="runMetadata">Run metadata.</param>
         /// <param name="runOptions">Run options.</param>
         /// <param name="status">Status buffer, if specified a status code will be left here, if not specified, a <see cref="T:TensorFlow.TFException"/> exception is raised if there is an error.</param>
-        public TFTensor [] Run (TFOutput [] inputs, TFTensor [] inputValues, TFOutput [] outputs, TFOperation [] targetOpers = null, TFBuffer runMetadata = null, TFBuffer runOptions = null, TFStatus status = null)
+        public TFTensor[] Run(TFOutput[] inputs, TFTensor[] inputValues, TFOutput[] outputs, TFOperation[] targetOpers = null, TFBuffer runMetadata = null, TFBuffer runOptions = null, TFStatus status = null)
         {
             if (handle == IntPtr.Zero)
-                ObjectDisposedException ();			
+                ObjectDisposedException();
             if (inputs == null)
-                throw new ArgumentNullException (nameof (inputs));
+                throw new ArgumentNullException(nameof(inputs));
             if (inputValues == null)
-                throw new ArgumentNullException (nameof (inputValues));
+                throw new ArgumentNullException(nameof(inputValues));
             if (outputs == null)
-                throw new ArgumentNullException (nameof (outputs));
+                throw new ArgumentNullException(nameof(outputs));
             int iLen = inputs.Length;
             if (iLen != inputValues.Length)
-                throw new ArgumentException ("inputs and inputValues have different lengths", "inputs");
+                throw new ArgumentException("inputs and inputValues have different lengths", "inputs");
             int oLen = outputs.Length;
 
             // runOptions and runMetadata might be null
-            var cstatus = TFStatus.Setup (status);
+            var cstatus = TFStatus.Setup(status);
 
             // Create arrays for the unmanaged versions
-            var ivals = new IntPtr [iLen];
+            var ivals = new IntPtr[iLen];
             for (int i = 0; i < iLen; i++)
-                ivals [i] = inputValues [i].handle;
+                ivals[i] = inputValues[i].handle;
 
             // I believe this might not be necessary, the output values in TF_SessionRun looks like a write-only result
-            var ovals = new IntPtr [outputs.Length];
-            IntPtr [] topers = null;
+            var ovals = new IntPtr[outputs.Length];
+            IntPtr[] topers = null;
             int tLen = 0;
-            if (targetOpers != null) {
+            if (targetOpers != null)
+            {
                 tLen = targetOpers.Length;
-                topers = new IntPtr [tLen];
+                topers = new IntPtr[tLen];
                 for (int i = 0; i < tLen; i++)
-                    topers [i] = targetOpers [i].handle;
+                    topers[i] = targetOpers[i].handle;
             }
 
             unsafe
             {
-                TF_SessionRun (handle, runOptions == null ? null : runOptions.LLBuffer, inputs, ivals, iLen, outputs, ovals, oLen, topers, tLen, runMetadata == null ? null : runMetadata.LLBuffer, cstatus.handle);
+                TF_SessionRun(handle, runOptions == null ? null : runOptions.LLBuffer, inputs, ivals, iLen, outputs, ovals, oLen, topers, tLen, runMetadata == null ? null : runMetadata.LLBuffer, cstatus.handle);
             }
-            cstatus.CheckMaybeRaise (status);
-            var result = new TFTensor [oLen];
-            for (int i = 0; i < oLen; i++) {
-                result [i] = new TFTensor (ovals [i]);
+            cstatus.CheckMaybeRaise(status);
+            var result = new TFTensor[oLen];
+            for (int i = 0; i < oLen; i++)
+            {
+                result[i] = new TFTensor(ovals[i]);
             }
             return result;
         }
 
         // extern void TF_SessionPRunSetup (TF_Session, const TF_Output *inputs, int ninputs, const TF_Output *outputs, int noutputs, const TF_Operation *const *target_opers, int ntargets, const char **handle, TF_Status *);
-        [DllImport (NativeBinding.TensorFlowLibrary)]
-        static extern unsafe void TF_SessionPRunSetup (TF_Session session, TFOutput [] inputs, int ninputs, TFOutput [] outputs, int noutputs, TF_Operation [] target_opers, int ntargets, out IntPtr returnHandle, TF_Status status);
+        [DllImport(NativeBinding.TensorFlowLibrary)]
+        static extern unsafe void TF_SessionPRunSetup(TF_Session session, TFOutput[] inputs, int ninputs, TFOutput[] outputs, int noutputs, TF_Operation[] target_opers, int ntargets, out IntPtr returnHandle, TF_Status status);
 
-        [DllImport (NativeBinding.TensorFlowLibrary)]
-        static extern unsafe void TF_DeletePRunHandle (IntPtr partialRunHandle);
+        [DllImport(NativeBinding.TensorFlowLibrary)]
+        static extern unsafe void TF_DeletePRunHandle(IntPtr partialRunHandle);
 
         /// <summary>
         /// Token returned from using one of the Partial Run Setup methods from <see cref="T:TensorFlow.TFSession"/>,
@@ -2383,10 +2429,11 @@ namespace TensorflowSharpCore
         {
             internal IntPtr token;
 
-            void IDisposable.Dispose ()
+            void IDisposable.Dispose()
             {
-                if (token == IntPtr.Zero) {
-                    TF_DeletePRunHandle (token);
+                if (token == IntPtr.Zero)
+                {
+                    TF_DeletePRunHandle(token);
                     token = IntPtr.Zero;
                 }
             }
@@ -2400,71 +2447,72 @@ namespace TensorflowSharpCore
         /// <param name="outputs">Outputs.</param>
         /// <param name="targetOpers">Target operations to run.</param>
         /// <param name="status">Status buffer, if specified a status code will be left here, if not specified, a <see cref="T:TensorFlow.TFException"/> exception is raised if there is an error.</param>
-        public PartialRunToken PartialRunSetup (TFOutput [] inputs, TFOutput [] outputs, TFOperation [] targetOpers, TFStatus status = null)
+        public PartialRunToken PartialRunSetup(TFOutput[] inputs, TFOutput[] outputs, TFOperation[] targetOpers, TFStatus status = null)
         {
             if (handle == IntPtr.Zero)
-                ObjectDisposedException ();			
+                ObjectDisposedException();
             if (inputs == null)
-                throw new ArgumentNullException (nameof (inputs));
+                throw new ArgumentNullException(nameof(inputs));
             if (outputs == null)
-                throw new ArgumentNullException (nameof (outputs));
+                throw new ArgumentNullException(nameof(outputs));
             if (targetOpers == null)
-                throw new ArgumentNullException (nameof (targetOpers));
-            
-            IntPtr returnHandle;
-            var cstatus = TFStatus.Setup (status);
-            int tLen = targetOpers.Length;
-            var topers = new IntPtr [tLen];
-            for (int i = 0; i < tLen; i++)
-                topers [i] = targetOpers [i].handle;
+                throw new ArgumentNullException(nameof(targetOpers));
 
-            TF_SessionPRunSetup (handle, inputs, inputs.Length, outputs, outputs.Length, topers, tLen, out returnHandle, cstatus.handle);
-            cstatus.CheckMaybeRaise (status);
-            return new PartialRunToken () { token = returnHandle };
+            IntPtr returnHandle;
+            var cstatus = TFStatus.Setup(status);
+            int tLen = targetOpers.Length;
+            var topers = new IntPtr[tLen];
+            for (int i = 0; i < tLen; i++)
+                topers[i] = targetOpers[i].handle;
+
+            TF_SessionPRunSetup(handle, inputs, inputs.Length, outputs, outputs.Length, topers, tLen, out returnHandle, cstatus.handle);
+            cstatus.CheckMaybeRaise(status);
+            return new PartialRunToken() { token = returnHandle };
         }
 
         // extern void TF_SessionPRun (TF_Session *, const char *handle, const TF_Output *inputs, TF_Tensor *const *input_values, int ninputs, const TF_Output *outputs, TF_Tensor **output_values, int noutputs, const TF_Operation *const *target_opers, int ntargets, TF_Status *);
-        [DllImport (NativeBinding.TensorFlowLibrary)]
-        static extern unsafe void TF_SessionPRun (TF_Session session, IntPtr partialHandle, TFOutput [] inputs, TF_Tensor [] input_values, int ninputs, TFOutput [] outputs, TF_Tensor [] output_values, int noutputs, TF_Operation [] target_opers, int ntargets, TF_Status status);
-        public TFTensor [] PartialRun (PartialRunToken token, TFOutput [] inputs, TFTensor [] inputValues, TFOutput [] outputs, TFOperation [] targetOpers, TFStatus status = null)
+        [DllImport(NativeBinding.TensorFlowLibrary)]
+        static extern unsafe void TF_SessionPRun(TF_Session session, IntPtr partialHandle, TFOutput[] inputs, TF_Tensor[] input_values, int ninputs, TFOutput[] outputs, TF_Tensor[] output_values, int noutputs, TF_Operation[] target_opers, int ntargets, TF_Status status);
+        public TFTensor[] PartialRun(PartialRunToken token, TFOutput[] inputs, TFTensor[] inputValues, TFOutput[] outputs, TFOperation[] targetOpers, TFStatus status = null)
         {
             if (handle == IntPtr.Zero)
-                ObjectDisposedException ();			
+                ObjectDisposedException();
             if (inputs == null)
-                throw new ArgumentNullException (nameof (inputs));
+                throw new ArgumentNullException(nameof(inputs));
             if (inputValues == null)
-                throw new ArgumentNullException (nameof (inputValues));
+                throw new ArgumentNullException(nameof(inputValues));
             if (outputs == null)
-                throw new ArgumentNullException (nameof (outputs));
+                throw new ArgumentNullException(nameof(outputs));
             if (targetOpers == null)
-                throw new ArgumentNullException (nameof (targetOpers));
+                throw new ArgumentNullException(nameof(targetOpers));
             int iLen = inputs.Length;
             if (iLen != inputValues.Length)
-                throw new ArgumentException ("inputs and inputValues have different lengths", "inputs");
+                throw new ArgumentException("inputs and inputValues have different lengths", "inputs");
             int oLen = outputs.Length;
 
             // runOptions and runMetadata might be null
-            var cstatus = TFStatus.Setup (status);
+            var cstatus = TFStatus.Setup(status);
 
             // Create arrays for the unmanaged versions
-            var ivals = new IntPtr [iLen];
+            var ivals = new IntPtr[iLen];
             for (int i = 0; i < iLen; i++)
-                ivals [i] = inputValues [i].handle;
-            var ovals = new IntPtr [oLen];
+                ivals[i] = inputValues[i].handle;
+            var ovals = new IntPtr[oLen];
             int tLen = targetOpers.Length;
-            var topers = new IntPtr [tLen];
+            var topers = new IntPtr[tLen];
             for (int i = 0; i < tLen; i++)
-                topers [i] = targetOpers [i].handle;
+                topers[i] = targetOpers[i].handle;
 
             unsafe
             {
-                TF_SessionPRun (handle, token.token, inputs, ivals, iLen, outputs, ovals, oLen, topers, tLen, cstatus.handle);
+                TF_SessionPRun(handle, token.token, inputs, ivals, iLen, outputs, ovals, oLen, topers, tLen, cstatus.handle);
             }
-            cstatus.CheckMaybeRaise (status);
+            cstatus.CheckMaybeRaise(status);
 
-            var result = new TFTensor [oLen];
-            for (int i = 0; i < oLen; i++) {
-                result [i] = new TFTensor (ovals [i]);
+            var result = new TFTensor[oLen];
+            for (int i = 0; i < oLen; i++)
+            {
+                result[i] = new TFTensor(ovals[i]);
             }
             return result;
         }
@@ -2477,12 +2525,13 @@ namespace TensorflowSharpCore
     /// Use the static method <see cref="M:Tensorflow.TFLibrary.FromFile"/> to load a dynamic library.
     /// Once that function returns
     /// </remarks>
-    public class TFLibrary : TFDisposable {
+    public class TFLibrary : TFDisposable
+    {
         // extern TF_Library * TF_LoadLibrary (const char *library_filename, TF_Status *status);
-        [DllImport (NativeBinding.TensorFlowLibrary)]
-        static extern unsafe TF_Library TF_LoadLibrary (string library_filename, TF_Status  status);
+        [DllImport(NativeBinding.TensorFlowLibrary)]
+        static extern unsafe TF_Library TF_LoadLibrary(string library_filename, TF_Status status);
 
-        TFLibrary (IntPtr handle) : base (handle) { }
+        TFLibrary(IntPtr handle) : base(handle) { }
 
         /// <summary>
         /// Load the library specified by and register the operations and
@@ -2495,17 +2544,17 @@ namespace TensorflowSharpCore
         /// The provided <paramref name="libraryFile"/> is passed to the operating system dynamic loader
         /// and it will load the library using the operating system defined search paths and rules to load this.
         /// </remarks>
-        public static TFLibrary FromFile (string libraryFile, TFStatus status = null)
+        public static TFLibrary FromFile(string libraryFile, TFStatus status = null)
         {
-            var cstatus = TFStatus.Setup (status);
-            var h = TF_LoadLibrary (libraryFile, cstatus.handle);
-            cstatus.CheckMaybeRaise (status);
-            return new TFLibrary (h);
+            var cstatus = TFStatus.Setup(status);
+            var h = TF_LoadLibrary(libraryFile, cstatus.handle);
+            cstatus.CheckMaybeRaise(status);
+            return new TFLibrary(h);
         }
 
         // extern TF_Buffer TF_GetOpList (TF_Library *lib_handle);
-        [DllImport (NativeBinding.TensorFlowLibrary)]
-        static extern unsafe LLBuffer TF_GetOpList (TF_Library lib_handle);
+        [DllImport(NativeBinding.TensorFlowLibrary)]
+        static extern unsafe LLBuffer TF_GetOpList(TF_Library lib_handle);
 
 
         /// <summary>
@@ -2513,18 +2562,18 @@ namespace TensorflowSharpCore
         /// the loaded TensorFlow library.
         /// </summary>
         /// <returns>The buffer contains a ProtocolBuffer encoded payload, you need a ProtocolBuffer reader to process the contents.</returns>
-        TFBuffer GetOpList ()
+        TFBuffer GetOpList()
         {
-            return new TFBuffer (TF_GetOpList (handle).data);
+            return new TFBuffer(TF_GetOpList(handle).data);
         }
 
         // extern void TF_DeleteLibraryHandle (TF_Library *lib_handle);
-        [DllImport (NativeBinding.TensorFlowLibrary)]
-        static extern unsafe void TF_DeleteLibraryHandle (TF_Library lib_handle);
+        [DllImport(NativeBinding.TensorFlowLibrary)]
+        static extern unsafe void TF_DeleteLibraryHandle(TF_Library lib_handle);
 
-        internal override void NativeDispose (IntPtr handle)
+        internal override void NativeDispose(IntPtr handle)
         {
-            TF_DeleteLibraryHandle (handle);
+            TF_DeleteLibraryHandle(handle);
         }
     }
 
@@ -2537,6 +2586,11 @@ namespace TensorflowSharpCore
     /// </remarks>
     public enum TFDataType : uint
     {
+        /// <summary>
+        /// The TFDataType has not been set
+        /// </summary>
+        Unknown = 0,
+
         /// <summary>
         /// Single precission floatint point, 32-bits (C# float)
         /// </summary>
@@ -2650,26 +2704,26 @@ namespace TensorflowSharpCore
         DataLoss = 15
     }
 
-    [StructLayout (LayoutKind.Sequential)]
+    [StructLayout(LayoutKind.Sequential)]
     public struct TFInput
     {
         public unsafe TF_Operation Operation;
         public int Index;
 
         // extern TF_Output TF_OperationInput (TF_Input oper_in);
-        [DllImport (NativeBinding.TensorFlowLibrary)]
-        static extern TFOutput TF_OperationInput (TFInput oper_in);
+        [DllImport(NativeBinding.TensorFlowLibrary)]
+        static extern TFOutput TF_OperationInput(TFInput oper_in);
 
-        public TFOutput GetOutput (TFInput operIn)
+        public TFOutput GetOutput(TFInput operIn)
         {
-            return TF_OperationInput (operIn);
+            return TF_OperationInput(operIn);
         }
 
         // extern TF_DataType TF_OperationInputType (TF_Input oper_in);
-        [DllImport (NativeBinding.TensorFlowLibrary)]
-        static extern TFDataType TF_OperationInputType (TFInput oper_in);
+        [DllImport(NativeBinding.TensorFlowLibrary)]
+        static extern TFDataType TF_OperationInputType(TFInput oper_in);
 
-        public TFDataType InputType => TF_OperationInputType (this);
+        public TFDataType InputType => TF_OperationInputType(this);
 
     }
 
@@ -2688,15 +2742,15 @@ namespace TensorflowSharpCore
     /// fetched.
     /// </para>
     /// </remarks>
-    [StructLayout (LayoutKind.Sequential)]
+    [StructLayout(LayoutKind.Sequential)]
     public struct TFOutput
     {
         unsafe TF_Operation LLOperation;
         public int Index;
 
         // extern int TF_OperationOutputNumConsumers (TF_Output oper_out);
-        [DllImport (NativeBinding.TensorFlowLibrary)]
-        static extern int TF_OperationOutputNumConsumers (TFOutput oper_out);
+        [DllImport(NativeBinding.TensorFlowLibrary)]
+        static extern int TF_OperationOutputNumConsumers(TFOutput oper_out);
 
         /// <summary>
         /// Gets the number consumers.
@@ -2705,27 +2759,27 @@ namespace TensorflowSharpCore
         /// <remarks>
         /// This number can change when new operations are added to the graph.
         /// </remarks>
-        public int NumConsumers => TF_OperationOutputNumConsumers (this);
+        public int NumConsumers => TF_OperationOutputNumConsumers(this);
 
         // extern TF_DataType TF_OperationOutputType (TF_Output oper_out);
-        [DllImport (NativeBinding.TensorFlowLibrary)]
-        static extern TFDataType TF_OperationOutputType (TFOutput oper_out);
+        [DllImport(NativeBinding.TensorFlowLibrary)]
+        static extern TFDataType TF_OperationOutputType(TFOutput oper_out);
 
         /// <summary>
         /// Gets the type of the output.
         /// </summary>
         /// <value>The type of the output.</value>
-        public TFDataType OutputType => TF_OperationOutputType (this);
+        public TFDataType OutputType => LLOperation == IntPtr.Zero ? TFDataType.Unknown : TF_OperationOutputType(this);
 
         /// <summary>
         /// Initializes a new TFOutput instance.
         /// </summary>
         /// <param name="operation">The operation to which to attach the output.</param>
         /// <param name="index">The index of the output within the operation, if not specified, it defaults to zero.</param>
-        public TFOutput (TFOperation operation, int index = 0)
+        public TFOutput(TFOperation operation, int index = 0)
         {
             if (operation == null)
-                throw new ArgumentNullException (nameof (operation));
+                throw new ArgumentNullException(nameof(operation));
             LLOperation = operation.handle;
             Index = index;
         }
@@ -2735,17 +2789,17 @@ namespace TensorflowSharpCore
         /// </summary>
         /// <param name="operation">The other TFOutput that is having its operation attached.</param>
         /// <param name="index">The index of the output within the operation, if not specified, it defaults to zero.</param>
-        public TFOutput (TFOutput output, int index = 0)
+        public TFOutput(TFOutput output, int index = 0)
         {
             if (output.LLOperation == null)
-                throw new ArgumentNullException ("Outputs does not have a valid operation pointer");
+                throw new ArgumentNullException("Outputs does not have a valid operation pointer");
             LLOperation = output.LLOperation;
             Index = index;
         }
 
         // extern int TF_OperationOutputConsumers (TF_Output oper_out, TF_Input *consumers, int max_consumers);
-        [DllImport (NativeBinding.TensorFlowLibrary)]
-        static extern unsafe int TF_OperationOutputConsumers (TFOutput oper_out, TFInput* consumers, int max_consumers);
+        [DllImport(NativeBinding.TensorFlowLibrary)]
+        static extern unsafe int TF_OperationOutputConsumers(TFOutput oper_out, TFInput* consumers, int max_consumers);
 
         /// <summary>
         /// Get list of all current consumers of a specific output of an operation
@@ -2756,13 +2810,15 @@ namespace TensorflowSharpCore
         /// an operation.
         /// This can return null if the TFOutput does not point to a valid object.
         /// </remarks>
-        public TFInput [] OutputConsumers {
-            get {
-                var result = new TFInput [NumConsumers];
+        public TFInput[] OutputConsumers
+        {
+            get
+            {
+                var result = new TFInput[NumConsumers];
                 unsafe
                 {
-                    fixed (TFInput* first = &result [0])
-                    TF_OperationOutputConsumers (this, first, result.Length);
+                    fixed (TFInput* first = &result[0])
+                        TF_OperationOutputConsumers(this, first, result.Length);
                 }
                 return result;
             }
@@ -2772,10 +2828,10 @@ namespace TensorflowSharpCore
         /// The associated operation.
         /// </summary>
         /// <value>The operation.</value>
-        public TFOperation Operation => new TFOperation (null, LLOperation);
-        public override string ToString ()
+        public TFOperation Operation => new TFOperation(null, LLOperation);
+        public override string ToString()
         {
-            return string.Format ("[TFOutput: LLOperation=0x{0:X} Index={1} Operation={2}]", (long) LLOperation, Index, Operation);
+            return string.Format("[{3} Index={1} Operation={2} (0x{0:X})]", (long)LLOperation, Index, Operation, OutputType);
         }
     }
 
@@ -2838,7 +2894,7 @@ namespace TensorflowSharpCore
     /// This is included for completeness, but is not generally used from C#, as you have access to the high-level
     /// bindings in the <see cref="T:TensorFlow.TFGraph"/> type.
     /// </remarks>
-    [StructLayout (LayoutKind.Sequential)]
+    [StructLayout(LayoutKind.Sequential)]
     public struct TFAttributeMetadata
     {
         byte isList;
@@ -2847,9 +2903,9 @@ namespace TensorflowSharpCore
         public TFAttributeType Type;
         public long TotalSize;
 
-        public override string ToString ()
+        public override string ToString()
         {
-            return string.Format ($"[TFAttributeMetadata IsList={IsList} ListSize={ListSize} Type={Type} TotalSize={TotalSize}]");
+            return string.Format($"[TFAttributeMetadata IsList={IsList} ListSize={ListSize} Type={Type} TotalSize={TotalSize}]");
         }
     }
 
@@ -2891,15 +2947,15 @@ namespace TensorflowSharpCore
         /// Represents an unknown number of dimensions in the tensor.
         /// </summary>
         /// <value>The unknown.</value>
-        public static TFShape Unknown => new TFShape (null);
+        public static TFShape Unknown => new TFShape(null);
 
         /// <summary>
         /// This shape is used to represent scalar values.
         /// </summary>
         /// <value>The scalar.</value>
-        public static TFShape Scalar => new TFShape (new long [0]);
+        public static TFShape Scalar => new TFShape(new long[0]);
 
-        internal long [] dims;
+        internal long[] dims;
 
         /// <summary>
         /// Initializes a new instance of the <see cref="T:TensorFlow.TFShape"/> class.
@@ -2911,7 +2967,7 @@ namespace TensorflowSharpCore
         /// <remarks>
         /// 
         /// </remarks>
-        public TFShape (params long [] args)
+        public TFShape(params long[] args)
         {
             this.dims = args;
         }
@@ -2921,7 +2977,7 @@ namespace TensorflowSharpCore
         /// </summary>
         /// <returns>The length, -1 for shapes that have an unknown dimension.</returns>
         /// <param name="dimension">Dimension.</param>
-        public int GetLength (int dimension) => dims == null ? -1 : dims.GetLength (dimension);
+        public int GetLength(int dimension) => dims == null ? -1 : dims.GetLength(dimension);
 
         /// <summary>
         /// Number of dimensions represented by this shape.
@@ -2933,8 +2989,10 @@ namespace TensorflowSharpCore
         /// Gets a value indicating whether all the dimensions in the <see cref="T:TensorFlow.TFShape"/> are fully specified.
         /// </summary>
         /// <value><c>true</c> if is fully specified; otherwise, <c>false</c>.</value>
-        public bool IsFullySpecified {
-            get {
+        public bool IsFullySpecified
+        {
+            get
+            {
                 if (dims == null)
                     return false;
                 foreach (var j in dims)
@@ -2948,12 +3006,12 @@ namespace TensorflowSharpCore
         /// Returns the shape as an array
         /// </summary>
         /// <returns>null if the shape represents an unknown shape, otherwise an array with N elements, one per dimension, and each element can be either -1 (if the dimension size is unspecified) or the size of the dimension.</returns>
-        public long [] ToArray ()
+        public long[] ToArray()
         {
             if (dims == null)
                 return null;
-            
-            var ret = (long [])dims.Clone ();
+
+            var ret = (long[])dims.Clone();
             return ret;
         }
 
@@ -2961,15 +3019,17 @@ namespace TensorflowSharpCore
         /// Returns the shape as an array
         /// </summary>
         /// <returns>null if the shape represents an unknown shape, otherwise an array with N elements, one per dimension, and each element can be either -1 (if the dimension size is unspecified) or the size of the dimension.</returns>
-        public int [] ToIntArray ()
+        public int[] ToIntArray()
         {
             if (dims == null)
                 return null;
 
-            var ret = new int [dims.Length];
-            for (int i = 0; i < dims.Length; i++) {
-                checked {
-                    ret [i] = (int) dims [i];
+            var ret = new int[dims.Length];
+            for (int i = 0; i < dims.Length; i++)
+            {
+                checked
+                {
+                    ret[i] = (int)dims[i];
                 }
             }
             return ret;
@@ -2979,8 +3039,10 @@ namespace TensorflowSharpCore
         /// Gets a value indicating whether one of the dimensions <see cref="T:TensorFlow.TFShape"/> in the shape is larger than Int32.MaxValue.
         /// </summary>
         /// <value><c>true</c> if is long array; otherwise, <c>false</c>.</value>
-        public bool IsLongArray {
-            get {
+        public bool IsLongArray
+        {
+            get
+            {
                 foreach (var l in dims)
                     if (l > Int32.MaxValue)
                         return true;
@@ -2989,26 +3051,26 @@ namespace TensorflowSharpCore
             }
         }
 
-        public override string ToString ()
+        public override string ToString()
         {
             if (dims == null)
                 return "unknown";
-            return "[" + String.Join (", ", dims.Select (x => x == -1 ? "?" : x.ToString ())) + "]";
+            return "[" + String.Join(", ", dims.Select(x => x == -1 ? "?" : x.ToString())) + "]";
         }
 
         /// <summary>
         /// Gets the dimensions for the specified index.
         /// </summary>
         /// <param name="idx">Index.</param>
-        public long this [int idx] => dims [idx];
+        public long this[int idx] => dims[idx];
 
         /// <summary>
         /// Returns the shape as a 1-dimensional tensor with each element corresponding to the specified shape dimension.
         /// </summary>
         /// <returns>The tensor.</returns>
-        public TFTensor AsTensor ()
+        public TFTensor AsTensor()
         {
-            return new TFTensor (ToIntArray ());
+            return new TFTensor(ToIntArray());
         }
 
         /// <summary>
@@ -3017,17 +3079,17 @@ namespace TensorflowSharpCore
         /// <param name="left">The first <see cref="TensorFlow.TFShape"/> to add.</param>
         /// <param name="right">The second <see cref="TensorFlow.TFShape"/> to add.</param>
         /// <returns>The <see cref="T:TensorFlow.TFShape"/> that is the sum of the values of <c>left</c> and <c>right</c>.</returns>
-        public static TFShape operator + (TFShape left, TFShape right)
+        public static TFShape operator +(TFShape left, TFShape right)
         {
             if (left == null)
                 return right;
             if (right == null)
                 return left;
 
-            var full = new long [left.dims.Length + right.dims.Length];
-            Array.Copy (left.dims, full, left.dims.Length);
-            Array.Copy (right.dims, 0, full, left.dims.Length, right.dims.Length);
-            return new TFShape (full);
+            var full = new long[left.dims.Length + right.dims.Length];
+            Array.Copy(left.dims, full, left.dims.Length);
+            Array.Copy(right.dims, 0, full, left.dims.Length, right.dims.Length);
+            return new TFShape(full);
         }
     }
 

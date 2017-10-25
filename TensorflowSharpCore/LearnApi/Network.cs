@@ -51,7 +51,7 @@ namespace TensorflowSharpCore.LearnApi
             }
         }
 
-        public void Run(dynamic inputParameters, Action<TFSession> customRunning)
+        public void Run(dynamic inputParameters, string[] outputLayerValues, Action<TFSession> customRunning = null)
         {
             using (var session = new TFSession(Graph))
             {
@@ -78,17 +78,41 @@ namespace TensorflowSharpCore.LearnApi
                     default:
                         throw new ArgumentOutOfRangeException();
                 }
-
-                if (inputParameters is IDictionary<string, object> parameters)
+                var inputParameterValues = ((object)inputParameters)
+                    .GetType()
+                    .GetProperties()
+                    .ToDictionary(p => p.Name, p => p.GetValue(inputParameters));
+                foreach (var item in inputParameterValues)
                 {
-                    foreach (var item in parameters)
-                    {
-                        var input = _layers[item.Key];
+                    var input = _layers[item.Key];
 
-                        setPlaceholder(input, item.Value);
+                    setPlaceholder(input, item.Value);
+                }
+
+                if (customRunning != null)
+                {
+
+                }
+                else
+                {
+                    var outputs = new List<TFOutput>();
+
+                    foreach (var outputLayerValue in outputLayerValues)
+                    {
+                        if (!_layers.ContainsKey(outputLayerValue))
+                        {
+                            throw new Exception($"Can't recover values from the output layer {outputLayerValue}");
+                        }
+                        var layer = _layers[outputLayerValue];
+
+                        outputs.Add(layer.Output);
+                    }
+                    var run = runner.Fetch(outputs.ToArray()).Run();
+
+                    foreach (var value in run)
+                    {
                     }
                 }
-                runner.Run();
             }
         }
     }

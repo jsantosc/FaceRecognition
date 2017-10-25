@@ -1,4 +1,5 @@
-﻿using System.IO;
+﻿using System;
+using System.IO;
 using System.Linq;
 using System.Runtime.InteropServices;
 using System.Text;
@@ -43,7 +44,7 @@ namespace FaceRecognition.UnitTests.TensorflowSharpCore
             {
                 string json = await textReader.ReadToEndAsync().ConfigureAwait(false);
                 var obj = JsonConvert.DeserializeObject<LayerSerializationModel[]>(json);
-                Network network = new Network();
+                var network = new Network();
 
                 var conv1 = obj.Single(o => o.Name == "conv1");
                 var conv2 = obj.Single(o => o.Name == "conv2");
@@ -64,6 +65,21 @@ namespace FaceRecognition.UnitTests.TensorflowSharpCore
                     .ContinueWithMultidimensionalSoftMax("prob1", 3);
                 network.FromLayer("PReLU3")
                     .ContinueWithConv2D("conv4-2", (1, 1, 4), (1, 1), PaddingType.Same, conv42.Weights, biases: conv42.Biases);
+
+                float[,,,] inputValues = new float[100, 100, 1, 1];
+
+                var random = new Random();
+                for (int x = 0; x < 100; x++)
+                {
+                    for (int y = 0; y < 100; y++)
+                    {
+                        for (int z = 0; z < 3; z++)
+                        {
+                            inputValues[x, y, z, 0] = (float)random.NextDouble() * 255;
+                        }
+                    }
+                }
+                network.Run(new { data = inputValues }, new[] { "prob1" });
             }
         }
         public async Task LoadMtcnnRNetNetworkAsync()
