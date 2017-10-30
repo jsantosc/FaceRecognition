@@ -12,11 +12,11 @@ using FaceRecognition.Common.Specification;
 using FaceRecognition.Domain.CoreFramework;
 using FaceRecognition.Domain.DeepNeuralNetworks;
 using FaceRecognition.Domain.Helpers;
-using ImageSharp;
-using ImageSharp.Formats;
-using ImageSharp.PixelFormats;
-using ImageSharp.Processing;
 using Newtonsoft.Json;
+using SixLabors.ImageSharp;
+using SixLabors.ImageSharp.Formats.Jpeg;
+using SixLabors.ImageSharp.PixelFormats;
+using SixLabors.ImageSharp.Processing;
 
 namespace FaceRecognition.Domain.Images
 {
@@ -258,48 +258,60 @@ namespace FaceRecognition.Domain.Images
         {
             return new WorkingImage(this);
         }
-        public Rgba32[] ToColorPixels()
+        //public Rgba32[] ToColorPixels()
+        //{
+        //    using (Stream sourceStream = File.OpenRead(GetFileServerPath()))
+        //    using (var sourceImg = Image.Load(sourceStream))
+        //    {
+        //        int length = Width * Height;
+        //        Rgba32[] pixels = new Rgba32[length];
+
+        //        Array.Copy(sourceImg.Pixels.ToArray(), pixels, length);
+        //        return pixels;
+        //    }
+        //}
+        //public Rgba32[] ToColorPixels(int desiredWidth, int desiredHeight)
+        //{
+        //    using (Stream sourceStream = File.OpenRead(GetFileServerPath()))
+        //    using (var sourceImg = Image.Load(sourceStream))
+        //    {
+        //        sourceImg.Mutate(x => x.Resize(desiredWidth, desiredHeight, new NearestNeighborResampler()));
+        //        int length = desiredWidth * desiredHeight;
+        //        Rgba32[] pixels = new Rgba32[length];
+
+        //        Array.Copy(sourceImg.Pixels.ToArray(), pixels, length);
+        //        return pixels;
+        //    }
+        //}
+
+        /// <summary>
+        /// Extracts the pixel information of the image to an array
+        /// </summary>
+        /// <param name="desiredWidth"></param>
+        /// <param name="desiredHeight"></param>
+        /// <remarks>The format of the array will be:
+        ///     - First Dimension: Height
+        ///     - Second Dimension: Width
+        ///     - Third dimension: Channel
+        ///     - Channel. Channel will be in RGB format (0 - R, 1 - G, 2 - B)
+        /// </remarks>
+        /// <returns></returns>
+        public NoLohArray3D<float> ToColorPixelsArray(int desiredWidth, int desiredHeight)
         {
             using (Stream sourceStream = File.OpenRead(GetFileServerPath()))
             using (var sourceImg = Image.Load(sourceStream))
             {
-                int length = Width * Height;
-                Rgba32[] pixels = new Rgba32[length];
-
-                Array.Copy(sourceImg.Pixels.ToArray(), pixels, length);
-                return pixels;
-            }
-        }
-        public Rgba32[] ToColorPixels(int desiredWidth, int desiredHeight)
-        {
-            using (Stream sourceStream = File.OpenRead(GetFileServerPath()))
-            using (var sourceImg = Image.Load(sourceStream).Resize(desiredWidth, desiredHeight, new NearestNeighborResampler()))
-            {
-                int length = desiredWidth * desiredHeight;
-                Rgba32[] pixels = new Rgba32[length];
-
-                Array.Copy(sourceImg.Pixels.ToArray(), pixels, length);
-                return pixels;
-            }
-        }
-
-        public NoLohArray3D<float> ToColorPixelsArray(int desiredWidth, int desiredHeight)
-        {
-            using (Stream sourceStream = File.OpenRead(GetFileServerPath()))
-            using (var sourceImg = Image.Load(sourceStream).Resize(desiredWidth, desiredHeight, new NearestNeighborResampler()))
-            {
+                sourceImg.Mutate(x => x.Resize(desiredWidth, desiredHeight, new BoxResampler()));
                 var destArray = new NoLohArray3D<float>(desiredWidth, desiredHeight, 3);
 
                 Parallel.For(0, desiredHeight, Bootstrapper.Instance.MaxDegreeOfParalelism, row =>
                 {
-                    int startIndex = row * desiredWidth;
-
                     for (int column = 0; column < desiredWidth; column++)
                     {
-                        var pixelRgb = sourceImg.Pixels[startIndex + column];
-                        destArray[row, column, 0] = pixelRgb.R;
-                        destArray[row, column, 1] = pixelRgb.G;
-                        destArray[row, column, 2] = pixelRgb.B;
+                        var pixelRgb = sourceImg[column, row];
+                        destArray[column, row, 0] = pixelRgb.R;
+                        destArray[column, row, 1] = pixelRgb.G;
+                        destArray[column, row, 2] = pixelRgb.B;
                     }
                 });
                 return destArray;

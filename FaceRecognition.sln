@@ -1,7 +1,7 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio 15
-VisualStudioVersion = 15.0.26730.15
+VisualStudioVersion = 15.0.27004.2005
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "FaceRecognition.Domain", "FaceRecognition.Domain\FaceRecognition.Domain.csproj", "{400E907F-51EB-4BB9-A3BF-4279F9931645}"
 EndProject
@@ -15,7 +15,11 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Conditions", "Conditions\Co
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "FaceRecognition.Common", "FaceRecognition.Common\FaceRecognition.Common.csproj", "{F232DB5B-A0FE-4A00-9A5D-68C43685F10D}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "TensorflowSharpCore", "TensorflowSharpCore\TensorflowSharpCore.csproj", "{BC8CD282-F379-4974-B92E-C2BD3EA081F0}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "TensorflowSharpCore", "TensorflowSharpCore\TensorflowSharpCore.csproj", "{BC8CD282-F379-4974-B92E-C2BD3EA081F0}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "FaceRecognition.PythonConnector", "FaceRecognition.PythonConnector\FaceRecognition.PythonConnector.csproj", "{6F3F85C4-BA60-4A9F-9589-3F9BAF83D6C8}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "FaceRecognition.IntegrationTests", "FaceRecognition.IntegrationTests\FaceRecognition.IntegrationTests.csproj", "{655BA39D-AB6D-4496-A6BA-67685B3F1E87}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -73,6 +77,22 @@ Global
 		{BC8CD282-F379-4974-B92E-C2BD3EA081F0}.Release|Any CPU.Build.0 = Release|Any CPU
 		{BC8CD282-F379-4974-B92E-C2BD3EA081F0}.Release|x64.ActiveCfg = Release|x64
 		{BC8CD282-F379-4974-B92E-C2BD3EA081F0}.Release|x64.Build.0 = Release|x64
+		{6F3F85C4-BA60-4A9F-9589-3F9BAF83D6C8}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{6F3F85C4-BA60-4A9F-9589-3F9BAF83D6C8}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{6F3F85C4-BA60-4A9F-9589-3F9BAF83D6C8}.Debug|x64.ActiveCfg = Debug|Any CPU
+		{6F3F85C4-BA60-4A9F-9589-3F9BAF83D6C8}.Debug|x64.Build.0 = Debug|Any CPU
+		{6F3F85C4-BA60-4A9F-9589-3F9BAF83D6C8}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{6F3F85C4-BA60-4A9F-9589-3F9BAF83D6C8}.Release|Any CPU.Build.0 = Release|Any CPU
+		{6F3F85C4-BA60-4A9F-9589-3F9BAF83D6C8}.Release|x64.ActiveCfg = Release|Any CPU
+		{6F3F85C4-BA60-4A9F-9589-3F9BAF83D6C8}.Release|x64.Build.0 = Release|Any CPU
+		{655BA39D-AB6D-4496-A6BA-67685B3F1E87}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{655BA39D-AB6D-4496-A6BA-67685B3F1E87}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{655BA39D-AB6D-4496-A6BA-67685B3F1E87}.Debug|x64.ActiveCfg = Debug|Any CPU
+		{655BA39D-AB6D-4496-A6BA-67685B3F1E87}.Debug|x64.Build.0 = Debug|Any CPU
+		{655BA39D-AB6D-4496-A6BA-67685B3F1E87}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{655BA39D-AB6D-4496-A6BA-67685B3F1E87}.Release|Any CPU.Build.0 = Release|Any CPU
+		{655BA39D-AB6D-4496-A6BA-67685B3F1E87}.Release|x64.ActiveCfg = Release|Any CPU
+		{655BA39D-AB6D-4496-A6BA-67685B3F1E87}.Release|x64.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -80,6 +100,7 @@ Global
 	GlobalSection(NestedProjects) = preSolution
 		{595F0D3A-5EAD-4863-AA8A-F6B51F73E9BA} = {1234AE33-F3B2-4E5F-A473-0EC32CED868A}
 		{0906C72F-F024-4420-872E-B33E7B878AA3} = {1234AE33-F3B2-4E5F-A473-0EC32CED868A}
+		{655BA39D-AB6D-4496-A6BA-67685B3F1E87} = {1234AE33-F3B2-4E5F-A473-0EC32CED868A}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {7AC84869-3EF8-4F5E-A968-9327771678D8}

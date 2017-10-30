@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Threading.Tasks;
 using Conditions;
+using FaceRecognition.Domain.Helpers;
 using FaceRecognition.Domain.Images;
 
 namespace FaceRecognition.Domain.FaceDetections.Algorithms
@@ -48,7 +49,12 @@ namespace FaceRecognition.Domain.FaceDetections.Algorithms
             {
                 int newWidth = (int)Math.Ceiling(image.Width * scale);
                 int newHeight = (int)Math.Ceiling(image.Height * scale);
-                var rgba = image.ToColorPixels(newWidth, newHeight);
+                float[,,,] normalizedValues;
+
+                using (var rgba = image.ToColorPixelsArray(newWidth, newHeight))
+                {
+                    normalizedValues = rgba.NormalizeBatch();
+                }
 
             }
             await Task.CompletedTask.ConfigureAwait(false);

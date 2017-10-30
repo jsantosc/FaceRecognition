@@ -6,9 +6,9 @@ using System.Threading.Tasks;
 using FaceRecognition.Common;
 using FaceRecognition.Common.MemoryOptimizations;
 using FaceRecognition.Domain.Helpers;
-using ImageSharp;
-using ImageSharp.PixelFormats;
-using ImageSharp.Processing;
+using SixLabors.ImageSharp;
+using SixLabors.ImageSharp.PixelFormats;
+using SixLabors.ImageSharp.Processing;
 using SixLabors.Primitives;
 
 namespace FaceRecognition.Domain.Images
@@ -30,9 +30,9 @@ namespace FaceRecognition.Domain.Images
             }
             using (Stream sourceStream = File.OpenRead(_sourceImage.GetFileServerPath()))
             using (var sourceImg = Image.Load(sourceStream))
-            using (var grayImg = sourceImg.Grayscale())
             {
-                return await BaseImage.CreateAsync(grayImg, _sourceImage.Name, Effect.ConvertToGrayEffect(_sourceImage.AppliedEffects.LastOrDefault()), _sourceImage, _sourceImage.FacePoints,
+                sourceImg.Mutate(x => x.Grayscale());
+                return await BaseImage.CreateAsync(sourceImg, _sourceImage.Name, Effect.ConvertToGrayEffect(_sourceImage.AppliedEffects.LastOrDefault()), _sourceImage, _sourceImage.FacePoints,
                     xTop: _sourceImage.XTopLeftOriginal, yTop: _sourceImage.YTopLeftOriginal, xBottom: _sourceImage.XBottomRightOriginal, yBottom: _sourceImage.YBottomRightOriginal, isRgb: false).ConfigureAwait(false);
             }
         }
@@ -48,28 +48,23 @@ namespace FaceRecognition.Domain.Images
                 switch (flipMode)
                 {
                     case FlipMode.Horizontal:
-                        using (var flipHImage = sourceImg.Flip(FlipType.Horizontal))
-                        {
-                            return await BaseImage.CreateAsync(flipHImage, _sourceImage.Name, Effect.FlipEffect(flipMode, _sourceImage.AppliedEffects.LastOrDefault()), _sourceImage, _sourceImage.FacePoints.Select(p => new Vector2(_sourceImage.Width - p.X, p.Y)),
-                                xTop: _sourceImage.XTopLeftOriginal, yTop: _sourceImage.YTopLeftOriginal, xBottom: _sourceImage.XBottomRightOriginal, yBottom: _sourceImage.YBottomRightOriginal, isRgb: _sourceImage.IsRgb).ConfigureAwait(false);
-                        }
+                        sourceImg.Mutate(x => x.Flip(FlipType.Horizontal));
+                        return await BaseImage.CreateAsync(sourceImg, _sourceImage.Name, Effect.FlipEffect(flipMode, _sourceImage.AppliedEffects.LastOrDefault()), _sourceImage, _sourceImage.FacePoints.Select(p => new Vector2(_sourceImage.Width - p.X, p.Y)),
+                            xTop: _sourceImage.XTopLeftOriginal, yTop: _sourceImage.YTopLeftOriginal, xBottom: _sourceImage.XBottomRightOriginal, yBottom: _sourceImage.YBottomRightOriginal, isRgb: _sourceImage.IsRgb).ConfigureAwait(false);
                     case FlipMode.Vertical:
-                        using (var flipVImage = sourceImg.Flip(FlipType.Vertical))
-                        {
-                            return await BaseImage.CreateAsync(flipVImage, _sourceImage.Name, Effect.FlipEffect(flipMode, _sourceImage.AppliedEffects.LastOrDefault()), _sourceImage, _sourceImage.FacePoints.Select(p => new Vector2(p.X, _sourceImage.Height - p.Y)),
-                                xTop: _sourceImage.XTopLeftOriginal, yTop: _sourceImage.YTopLeftOriginal, xBottom: _sourceImage.XBottomRightOriginal, yBottom: _sourceImage.YBottomRightOriginal, isRgb: _sourceImage.IsRgb).ConfigureAwait(false);
-                        }
+                        sourceImg.Mutate(x => x.Flip(FlipType.Vertical));
+                        return await BaseImage.CreateAsync(sourceImg, _sourceImage.Name, Effect.FlipEffect(flipMode, _sourceImage.AppliedEffects.LastOrDefault()), _sourceImage, _sourceImage.FacePoints.Select(p => new Vector2(p.X, _sourceImage.Height - p.Y)),
+                            xTop: _sourceImage.XTopLeftOriginal, yTop: _sourceImage.YTopLeftOriginal, xBottom: _sourceImage.XBottomRightOriginal, yBottom: _sourceImage.YBottomRightOriginal, isRgb: _sourceImage.IsRgb).ConfigureAwait(false);
                     case FlipMode.Both:
-                        using (var flipVImage = sourceImg.Flip(FlipType.Horizontal).Flip(FlipType.Vertical))
-                        {
-                            return await BaseImage.CreateAsync(flipVImage, _sourceImage.Name, Effect.FlipEffect(flipMode, _sourceImage.AppliedEffects.LastOrDefault()), _sourceImage, _sourceImage.FacePoints.Select(p => new Vector2(_sourceImage.Width - p.X, _sourceImage.Height - p.Y)),
-                                xTop: _sourceImage.XTopLeftOriginal, yTop: _sourceImage.YTopLeftOriginal, xBottom: _sourceImage.XBottomRightOriginal, yBottom: _sourceImage.YBottomRightOriginal, isRgb: _sourceImage.IsRgb).ConfigureAwait(false);
-                        }
+                        sourceImg.Mutate(x => x.Flip(FlipType.Horizontal).Flip(FlipType.Vertical));
+                        return await BaseImage.CreateAsync(sourceImg, _sourceImage.Name, Effect.FlipEffect(flipMode, _sourceImage.AppliedEffects.LastOrDefault()), _sourceImage, _sourceImage.FacePoints.Select(p => new Vector2(_sourceImage.Width - p.X, _sourceImage.Height - p.Y)),
+                            xTop: _sourceImage.XTopLeftOriginal, yTop: _sourceImage.YTopLeftOriginal, xBottom: _sourceImage.XBottomRightOriginal, yBottom: _sourceImage.YBottomRightOriginal, isRgb: _sourceImage.IsRgb).ConfigureAwait(false);
                     default:
                         throw new ArgumentOutOfRangeException(nameof(flipMode), flipMode, null);
                 }
             }
         }
+
         public async Task<BaseImage> GenerateBlurAsync(float sigma = 3)
         {
             if (_sourceImage.AppliedEffects.Any(e => e.Type.HasFlag(EffectType.Blurred)))
@@ -78,12 +73,17 @@ namespace FaceRecognition.Domain.Images
             }
             using (var sourceStream = File.OpenRead(_sourceImage.GetFileServerPath()))
             using (var sourceImg = Image.Load(sourceStream))
-            using (var grayImg = sourceImg.GaussianBlur(sigma))
             {
-                return await BaseImage.CreateAsync(grayImg, _sourceImage.Name, Effect.BlurEffect(sigma, _sourceImage.AppliedEffects.LastOrDefault()), _sourceImage, _sourceImage.FacePoints,
-                    xTop: _sourceImage.XTopLeftOriginal, yTop: _sourceImage.YTopLeftOriginal, xBottom: _sourceImage.XBottomRightOriginal, yBottom: _sourceImage.YBottomRightOriginal, isRgb: _sourceImage.IsRgb).ConfigureAwait(false);
+                sourceImg.Mutate(x => x.GaussianBlur(sigma));
+                return await BaseImage.CreateAsync(sourceImg, _sourceImage.Name,
+                    Effect.BlurEffect(sigma, _sourceImage.AppliedEffects.LastOrDefault()), _sourceImage,
+                    _sourceImage.FacePoints,
+                    xTop: _sourceImage.XTopLeftOriginal, yTop: _sourceImage.YTopLeftOriginal,
+                    xBottom: _sourceImage.XBottomRightOriginal, yBottom: _sourceImage.YBottomRightOriginal,
+                    isRgb: _sourceImage.IsRgb).ConfigureAwait(false);
             }
         }
+
         public async Task<BaseImage> RotateAsync(float angle)
         {
             if (_sourceImage.AppliedEffects.Any(e => e.Type.HasFlag(EffectType.Rotated)))
@@ -96,47 +96,43 @@ namespace FaceRecognition.Domain.Images
                 int originalWidth = sourceImg.Width;
                 int originalHeight = sourceImg.Height;
 
-                using (var rotateImage = sourceImg.Rotate(angle)) //TODO: Review why we must expand image (otherwise it fails)
-                {
-                    //Recenter the image
-                    var addedWidth = (rotateImage.Width - originalWidth) / 2f;
-                    var addedHeight = (rotateImage.Height - originalHeight) / 2f;
-                    var addedWidthInt = (int)addedWidth;
-                    var addedHeightInt = (int)addedHeight;
-                    var vectorToAdd = new Vector2(addedWidth - addedWidthInt, addedHeight - addedHeightInt);
+                sourceImg.Mutate(x => x.Rotate(angle)); //TODO: Review why we must expand image (otherwise it fails)
+                                                        //Recenter the image
+                var addedWidth = (sourceImg.Width - originalWidth) / 2f;
+                var addedHeight = (sourceImg.Height - originalHeight) / 2f;
+                var addedWidthInt = (int)addedWidth;
+                var addedHeightInt = (int)addedHeight;
+                var vectorToAdd = new Vector2(addedWidth - addedWidthInt, addedHeight - addedHeightInt);
 
-                    var xCenter = originalWidth / 2f;
-                    var yCenter = originalHeight / 2f;
-                    var facePoints = _sourceImage.FacePoints.Select(p => p.RotatePoint(xCenter, yCenter, angle) + vectorToAdd).ToArray();
+                var xCenter = originalWidth / 2f;
+                var yCenter = originalHeight / 2f;
+                var facePoints = _sourceImage.FacePoints.Select(p => p.RotatePoint(xCenter, yCenter, angle) + vectorToAdd).ToArray();
 
-                    using (var rotateCropImage = rotateImage.Crop(new Rectangle(addedWidthInt, addedHeightInt, originalWidth, originalHeight)))
-                    {
-                        var img = await BaseImage.CreateAsync(rotateCropImage, _sourceImage.Name, Effect.RotationEffect(angle, _sourceImage.AppliedEffects.LastOrDefault()), _sourceImage, isRgb: _sourceImage.IsRgb).ConfigureAwait(false);
+                sourceImg.Mutate(x => x.Crop(new Rectangle(addedWidthInt, addedHeightInt, originalWidth, originalHeight)));
+                var img = await BaseImage.CreateAsync(sourceImg, _sourceImage.Name, Effect.RotationEffect(angle, _sourceImage.AppliedEffects.LastOrDefault()), _sourceImage, isRgb: _sourceImage.IsRgb).ConfigureAwait(false);
 
-                        img.SetFaceLandmarks(facePoints);
-                        return img;
-                    }
-
-                }
+                img.SetFaceLandmarks(facePoints);
+                return img;
             }
         }
-        public async Task<BaseImage> GenerateElasticSearchAsync(int kernelSize = 13, double sigma = 6, double alpha = 36)
-        {
-            if (_sourceImage.AppliedEffects.Any(e => e.Type.HasFlag(EffectType.ElasticDistorsionated)))
-            {
-                throw new Exception($"The image {_sourceImage.Id} is already elastic distorsioned. Use the original one");
-            }
-            using (var sourceStream = File.OpenRead(_sourceImage.GetFileServerPath()))
-            using (var sourceImg = Image.Load(sourceStream))
-            using (var imageE = new Image<Rgba32>(sourceImg.Width, sourceImg.Height))
-            {
-                Vector2[] destFacePoints = new Vector2[_sourceImage.FacePoints.Length];
+        //public async Task<BaseImage> GenerateElasticSearchAsync(int kernelSize = 13, double sigma = 6, double alpha = 36)
+        //{
+        //    if (_sourceImage.AppliedEffects.Any(e => e.Type.HasFlag(EffectType.ElasticDistorsionated)))
+        //    {
+        //        throw new Exception($"The image {_sourceImage.Id} is already elastic distorsioned. Use the original one");
+        //    }
+        //    using (var sourceStream = File.OpenRead(_sourceImage.GetFileServerPath()))
+        //    using (var sourceImg = Image.Load(sourceStream))
+        //    using (var imageE = new Image<Rgba32>(sourceImg.Width, sourceImg.Height))
+        //    {
+        //        Vector2[] destFacePoints = new Vector2[_sourceImage.FacePoints.Length];
 
-                GenerateElasticPixels(kernelSize, sigma, alpha, sourceImg.Pixels, imageE.Pixels, sourceImg.Width, sourceImg.Height, _sourceImage.FacePoints, destFacePoints);
-                return await BaseImage.CreateAsync(imageE, _sourceImage.Name, Effect.ElasticDeformationEffect(sigma, alpha, kernelSize, _sourceImage.AppliedEffects.LastOrDefault()), _sourceImage, destFacePoints,
-                    xTop: _sourceImage.XTopLeftOriginal, yTop: _sourceImage.YTopLeftOriginal, xBottom: _sourceImage.XBottomRightOriginal, yBottom: _sourceImage.YBottomRightOriginal, isRgb: _sourceImage.IsRgb).ConfigureAwait(false);
-            }
-        }
+        //        Image.
+        //        GenerateElasticPixels(kernelSize, sigma, alpha, sourceImg.Pixels, imageE.Pixels, sourceImg.Width, sourceImg.Height, _sourceImage.FacePoints, destFacePoints);
+        //        return await BaseImage.CreateAsync(imageE, _sourceImage.Name, Effect.ElasticDeformationEffect(sigma, alpha, kernelSize, _sourceImage.AppliedEffects.LastOrDefault()), _sourceImage, destFacePoints,
+        //            xTop: _sourceImage.XTopLeftOriginal, yTop: _sourceImage.YTopLeftOriginal, xBottom: _sourceImage.XBottomRightOriginal, yBottom: _sourceImage.YBottomRightOriginal, isRgb: _sourceImage.IsRgb).ConfigureAwait(false);
+        //    }
+        //}
         public async Task<BaseImage> CropAndResizeAsync(int x, int y, int width, int height, int newWidth, int newHeight)
         {
             const float minDownscaleFactor = 0.5f;
@@ -147,25 +143,25 @@ namespace FaceRecognition.Domain.Images
 
             using (var sourceStream = File.OpenRead(_sourceImage.GetFileServerPath()))
             using (var sourceImg = Image.Load(sourceStream))
-            using (var grayImg = sourceImg.Crop(new Rectangle(x, y, width, height)).Resize(new ResizeOptions()
             {
-                Mode = ResizeMode.Stretch,
-                Size = new Size((int)Math.Round(width * xFactorStep), (int)Math.Round(height * yFactorStep)),
-                Sampler = new Lanczos3Resampler()
-            }))
-            {
-                while (grayImg.Width > newWidth)
+                sourceImg.Mutate(img => img.Crop(new Rectangle(x, y, width, height)).Resize(new ResizeOptions()
                 {
-                    xFactorStep = (1f * newWidth) / grayImg.Width;
+                    Mode = ResizeMode.Stretch,
+                    Size = new Size((int)Math.Round(width * xFactorStep), (int)Math.Round(height * yFactorStep)),
+                    Sampler = new Lanczos3Resampler()
+                }));
+                while (sourceImg.Width > newWidth)
+                {
+                    xFactorStep = (1f * newWidth) / sourceImg.Width;
                     xFactorStep = xFactorStep < minDownscaleFactor ? minDownscaleFactor : xFactorStep;
-                    yFactorStep = (1f * newHeight) / grayImg.Height;
+                    yFactorStep = (1f * newHeight) / sourceImg.Height;
                     yFactorStep = yFactorStep < minDownscaleFactor ? 0.5f : yFactorStep;
-                    grayImg.Resize(new ResizeOptions()
+                    sourceImg.Mutate(img => img.Resize(new ResizeOptions
                     {
                         Mode = ResizeMode.Stretch,
-                        Size = new Size((int)Math.Round(grayImg.Width * xFactorStep), (int)Math.Round(grayImg.Height * yFactorStep)),
+                        Size = new Size((int)Math.Round(sourceImg.Width * xFactorStep), (int)Math.Round(sourceImg.Height * yFactorStep)),
                         Sampler = new Lanczos3Resampler()
-                    });
+                    }));
                 }
                 int? xTop = _sourceImage.XTopLeftOriginal - x;
                 int? yTop = _sourceImage.YTopLeftOriginal - y;
@@ -174,7 +170,7 @@ namespace FaceRecognition.Domain.Images
 
                 var facePoints = _sourceImage.FacePoints.Select(p => new Vector2(xFactor * (p.X - x), yFactor * (p.Y - y)));
 
-                return await BaseImage.CreateAsync(grayImg, _sourceImage.Name, Effect.CropAndResizeEffect(_sourceImage.AppliedEffects.LastOrDefault()), _sourceImage, facePoints,
+                return await BaseImage.CreateAsync(sourceImg, _sourceImage.Name, Effect.CropAndResizeEffect(_sourceImage.AppliedEffects.LastOrDefault()), _sourceImage, facePoints,
                     xTop: xTop, yTop: yTop, xBottom: xBottom, yBottom: yBottom, isRgb: _sourceImage.IsRgb).ConfigureAwait(false);
             }
         }

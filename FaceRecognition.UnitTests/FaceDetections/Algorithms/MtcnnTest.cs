@@ -11,7 +11,7 @@ namespace FaceRecognition.UnitTests.FaceDetections.Algorithms
         [Fact]
         public async Task GivenIHaveAnImage_WhenIUseItWithTheMtcnnAlgorithm_ThenFaceLocationAndLandmarksAreReturned()
         {
-            using (var testImage = new TestResource(GetType().Assembly, "FaceRecognition.UnitTests.FaceDetections.Algorithms.Resources.Anthony_Hopkins_0001.jpg"))
+            using (var testImage = new TestResource(GetType().Assembly, "FaceRecognition.UnitTests.FaceDetections.Algorithms.Resources.image_020_1.jpg"))
             {
                 var image = await BaseImage.CreateAsync(testImage.ResourcePath).ConfigureAwait(false);
                 var mtcnnAlgorithm = new Mtcnn();

@@ -1,0 +1,6 @@
+﻿version: "3.3"
+services:
+  tensorflow:
+      image: "tensorflow:latest-py3"
+      ports:
+           - "8888:8888"

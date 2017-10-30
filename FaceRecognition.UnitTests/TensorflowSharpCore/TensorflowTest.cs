@@ -1,16 +1,22 @@
 ﻿using System;
 using System.IO;
 using System.Linq;
+using System.Numerics;
 using System.Runtime.InteropServices;
 using System.Text;
 using System.Threading.Tasks;
+using FaceRecognition.CommonTests;
+using FaceRecognition.Domain.Helpers;
+using FaceRecognition.Domain.Images;
 using FluentAssertions;
 using Newtonsoft.Json;
+using SixLabors.ImageSharp;
 using TensorflowSharpCore;
 using TensorflowSharpCore.LearnApi;
 using TensorflowSharpCore.LearnApi.Layers;
 using Xunit;
 using TFGraph = TensorflowSharpCore.TFGraph;
+using System.Collections.Generic;
 
 namespace FaceRecognition.UnitTests.TensorflowSharpCore
 {
@@ -66,20 +72,29 @@ namespace FaceRecognition.UnitTests.TensorflowSharpCore
                 network.FromLayer("PReLU3")
                     .ContinueWithConv2D("conv4-2", (1, 1, 4), (1, 1), PaddingType.Same, conv42.Weights, biases: conv42.Biases);
 
-                float[,,,] inputValues = new float[1, 100, 100, 3];
+                float[,,,] inputValues;
+                //using (var imageResource = new TestResource(GetType().Assembly, "FaceRecognition.UnitTests.FaceDetections.Algorithms.Resources.image_020_1.jpg"))
+                //using (var imageStream = File.OpenRead(imageResource.ResourcePath))
+                //{
+                //    var image = Image.Load(imageStream);
+                //    var baseImage = await BaseImage.CreateAsync(image, "image_020_1.jpg").ConfigureAwait(false);
 
-                var random = new Random();
-                for (int x = 0; x < 100; x++)
+                //    using (var inputArrayValues = baseImage.ToColorPixelsArray(615, 384))
+                //    {
+                //        inputValues = inputArrayValues.NormalizeBatch();
+                //    }
+                //}
+                using (var jsonResurce = new TestResource(GetType().Assembly, "FaceRecognition.UnitTests.TensorflowSharpCore.Resources.data.json"))
                 {
-                    for (int y = 0; y < 100; y++)
-                    {
-                        for (int z = 0; z < 3; z++)
-                        {
-                            inputValues[0, x, y, z] = (float)random.NextDouble() * 255;
-                        }
-                    }
+                    inputValues = JsonConvert.DeserializeObject<float[,,,]>(File.ReadAllText(jsonResurce.ResourcePath));
                 }
-                network.Run(new { data = inputValues }, new[] { "PReLU3" });
+                var networkResults = network.Run(new { data = inputValues }, new[] { "conv4-2", "prob1" });
+
+                var points = new List<Vector2>();
+                var prob = networkResults.ElementAt(1);
+
+                System.Diagnostics.Debug.WriteLine($"{points.Count} boxes found");
+                networkResults.Count().Should().Be(2);
             }
         }
         public async Task LoadMtcnnRNetNetworkAsync()

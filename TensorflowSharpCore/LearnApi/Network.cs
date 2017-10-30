@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using TensorflowSharpCore.LearnApi.Layers;
+using TensorflowSharpCore.LearnApi.Results;
 
 namespace TensorflowSharpCore.LearnApi
 {
@@ -51,7 +52,7 @@ namespace TensorflowSharpCore.LearnApi
             }
         }
 
-        public void Run(dynamic inputParameters, string[] outputLayerValues, Action<TFSession> customRunning = null)
+        public IEnumerable<FloatNetworkResult> Run(dynamic inputParameters, IEnumerable<string> outputLayerValues, Func<TFSession, IEnumerable<FloatNetworkResult>> customRunning = null)
         {
             using (var session = new TFSession(Graph))
             {
@@ -91,7 +92,7 @@ namespace TensorflowSharpCore.LearnApi
 
                 if (customRunning != null)
                 {
-
+                    return customRunning(session);
                 }
                 else
                 {
@@ -109,9 +110,14 @@ namespace TensorflowSharpCore.LearnApi
                     }
                     var run = runner.Fetch(outputs.ToArray()).Run();
 
-                    foreach (var value in run)
+                    var floatNetworks = new List<FloatNetworkResult>();
+                    for (var i = 0; i < run.Length; i++)
                     {
+                        var value = run[i];
+                        floatNetworks.Add(new FloatNetworkResult(value.NumDims, value.GetValue(), outputLayerValues.ElementAt(i)));
                     }
+
+                    return floatNetworks;
                 }
             }
         }
