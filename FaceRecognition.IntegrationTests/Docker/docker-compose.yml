@@ -1,6 +1,14 @@
 ﻿version: "3.3"
 services:
   tensorflow:
-      image: "tensorflow:latest-py3"
-      ports:
-           - "8888:8888"
+    image: tensorflow/tensorflow:latest-py3
+    ports:
+      - "8888:8888"
+  servicebus:
+    image: rabbitmq:3.6.12-management
+    environment:
+      RABBITMQ_ERLANG_COOKIE: 'RabbitMqErlangCookie'
+      RABBITMQ_DEFAULT_USER: 'Administrator'
+      RABBITMQ_DEFAULT_PASS: 'Password'
+    ports:
+      - "8080:15672"

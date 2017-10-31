@@ -29,8 +29,8 @@ namespace FaceRecognition.CommonTests.Fixtures
             var processStartInfo = new ProcessStartInfo
             {
                 FileName = "docker-compose",
-                Arguments =
-                    $"-f {ServicePath}/docker-compose.yml -f {ServicePath}/docker-compose.test.yml build"
+                Arguments = $"-f {ServicePath}/docker-compose.yml build",
+                WorkingDirectory = AppDomain.CurrentDomain.BaseDirectory
             };
             AddEnvironmentVariables(processStartInfo);
 
@@ -47,7 +47,7 @@ namespace FaceRecognition.CommonTests.Fixtures
             {
                 FileName = "docker-compose",
                 Arguments =
-                    $"-f {ServicePath}/docker-compose.yml -f {ServicePath}/docker-compose.test.yml -p {ServiceName} up -d"
+                    $"-f {ServicePath}/docker-compose.yml -p {ServiceName} up -d"
             };
             AddEnvironmentVariables(processStartInfo);
 
@@ -76,7 +76,7 @@ namespace FaceRecognition.CommonTests.Fixtures
             {
                 FileName = "docker-compose",
                 Arguments =
-                    $"-f {ServicePath}/docker-compose.yml -f {ServicePath}/docker-compose.test.yml -p {ServiceName} down --rmi local"
+                    $"-f {ServicePath}/docker-compose.yml -p {ServiceName} down --rmi local"
             };
             AddEnvironmentVariables(processStartInfo);
 

@@ -16,4 +16,10 @@
     <ProjectReference Include="..\FaceRecognition.CommonTests\FaceRecognition.CommonTests.csproj" />
   </ItemGroup>
 
+  <ItemGroup>
+    <None Update="Docker\docker-compose.yml">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+  </ItemGroup>
+
 </Project>
