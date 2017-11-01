@@ -1,7 +1,7 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio 15
-VisualStudioVersion = 15.0.27004.2005
+VisualStudioVersion = 15.0.27004.2006
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "FaceRecognition.Domain", "FaceRecognition.Domain\FaceRecognition.Domain.csproj", "{400E907F-51EB-4BB9-A3BF-4279F9931645}"
 EndProject
@@ -17,9 +17,11 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "FaceRecognition.Common", "F
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "TensorflowSharpCore", "TensorflowSharpCore\TensorflowSharpCore.csproj", "{BC8CD282-F379-4974-B92E-C2BD3EA081F0}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "FaceRecognition.PythonConnector", "FaceRecognition.PythonConnector\FaceRecognition.PythonConnector.csproj", "{6F3F85C4-BA60-4A9F-9589-3F9BAF83D6C8}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "FaceRecognition.PythonConnector", "FaceRecognition.PythonConnector\FaceRecognition.PythonConnector.csproj", "{6F3F85C4-BA60-4A9F-9589-3F9BAF83D6C8}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "FaceRecognition.IntegrationTests", "FaceRecognition.IntegrationTests\FaceRecognition.IntegrationTests.csproj", "{655BA39D-AB6D-4496-A6BA-67685B3F1E87}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "FaceRecognition.IntegrationTests", "FaceRecognition.IntegrationTests\FaceRecognition.IntegrationTests.csproj", "{655BA39D-AB6D-4496-A6BA-67685B3F1E87}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "PythonScripts", "PythonScripts", "{08D7CC9C-9CA9-4965-B10E-50E894C405E4}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
