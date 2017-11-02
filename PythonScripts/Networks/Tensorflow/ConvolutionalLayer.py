@@ -1,8 +1,8 @@
 """ Module that creates a new convolutional layer """
 
 import tensorflow as tf
-import Layer as l
-import Common as common
+import Networks.Tensorflow.Layer as l
+import Networks.Tensorflow.Common as common
 
 class ConvolutionalLayer(l.Layer):
     def __init__(self,

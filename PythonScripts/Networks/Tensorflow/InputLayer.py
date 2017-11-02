@@ -1,7 +1,7 @@
 """ Input layer. Holds the nodes with the values for the image """
 
 import tensorflow as tf
-import Layer as l
+import Networks.Tensorflow.Layer as l
 
 class InputLayer(l.Layer):
     ''' Input layer to feed the neural network '''

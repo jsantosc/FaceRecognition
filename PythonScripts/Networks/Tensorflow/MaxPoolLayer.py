@@ -1,8 +1,8 @@
 """ Module with the class definitions to perform a Max Pooling operation in a tensorflow deep neural network """
 
 import tensorflow as tf
-import Layer as l
-import Common as common
+import Networks.Tensorflow.Layer as l
+import Networks.Tensorflow.Common as common
 
 class MaxPoolLayer(l.Layer):
     def __init__(self, layerName, inputNode, kernelHeight, kernelWidth, strideHeight, strideWidth, padding='SAME'):

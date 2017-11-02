@@ -1,9 +1,10 @@
 """ Module containing basic tensorflow networks deep neural network """
 
 import tensorflow as tf
-import InputLayer as il
-import ConvolutionalLayer as cl
-import MaxPoolLayer as mpl
+import Networks.Tensorflow.InputLayer as il
+import Networks.Tensorflow.ConvolutionalLayer as cl
+import Networks.Tensorflow.MaxPoolLayer as mpl
+import Networks.Tensorflow.SoftmaxLayer as sml
 
 class Network(object):
     ''' Represents a new Tensorlflow deep neural network '''
@@ -22,7 +23,8 @@ class Network(object):
 
     def feed(self, layerName):
         if layerName in self.layers:
-            pass
+            self.currentOutputNode = self.layers[layerName]
+            return self
         elif layerName in self.inputLayers:
             self.currentOutputNode = self.inputLayers[layerName]
             return self
@@ -60,9 +62,12 @@ class Network(object):
             self.currentOutputNode = maxPoolLayer
             return self
 
-a = Network('Pnet')
-a.addInputLayer('data', (None,None,None,3))
-a.feed('data')
-a.addConvolutionalLayer('conv1', 3, 3, 10, 1, 1)
-a.addMaxPooling('pool1', 2, 2, 1, 1)
-print(a)
+    def addSoftmax(self, layerName, axis):
+        if self.currentOutputNode == None:
+            raise 'You must feed the network and choose the previous node'
+
+        with tf.variable_scope(self.name):
+            softmax = sml.SoftmaxLayer(layerName, self.currentOutputNode.getOutput(), axis)
+            self.layers = dict(self.layers, **{ layerName: softmax })
+            self.currentOutputNode = softmax
+            return self
