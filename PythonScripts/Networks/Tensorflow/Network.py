@@ -3,6 +3,7 @@
 import tensorflow as tf
 import InputLayer as il
 import ConvolutionalLayer as cl
+import MaxPoolLayer as mpl
 
 class Network(object):
     ''' Represents a new Tensorlflow deep neural network '''
@@ -42,13 +43,26 @@ class Network(object):
         if self.currentOutputNode == None:
             raise 'You must feed the network and choose the previous node'
 
-        convLayer = cl.ConvolutionalLayer(self, layerName, self.currentOutputNode.getOutput(), kernelWidth, kernelHeight, kernelChannels,
-                        strideHeight, strideWidth, padding, grouping, biased, addRelu, reluType='RELU')
-        self.layers = dict(self.layers, **{ layerName: convLayer })
-        self.currentOutputNode = convLayer.getOutput()
-        return self
+        with tf.variable_scope(self.name):
+            convLayer = cl.ConvolutionalLayer(self, layerName, self.currentOutputNode.getOutput(), kernelWidth, kernelHeight, kernelChannels,
+                            strideHeight, strideWidth, padding, grouping, biased, addRelu, reluType='RELU')
+            self.layers = dict(self.layers, **{ layerName: convLayer })
+            self.currentOutputNode = convLayer
+            return self
+        
+    def addMaxPooling(self, layerName, kernelHeight, kernelWidth, strideHeight, strideWidth, padding='SAME'):
+        if self.currentOutputNode == None:
+            raise 'You must feed the network and choose the previous node'
+
+        with tf.variable_scope(self.name):
+            maxPoolLayer = mpl.MaxPoolLayer(layerName, self.currentOutputNode.getOutput(), kernelHeight, kernelWidth, strideHeight, strideWidth, padding)
+            self.layers = dict(self.layers, **{ layerName: maxPoolLayer })
+            self.currentOutputNode = maxPoolLayer
+            return self
+
 a = Network('Pnet')
 a.addInputLayer('data', (None,None,None,3))
 a.feed('data')
 a.addConvolutionalLayer('conv1', 3, 3, 10, 1, 1)
+a.addMaxPooling('pool1', 2, 2, 1, 1)
 print(a)
