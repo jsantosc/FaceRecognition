@@ -5,9 +5,19 @@ class Layer(object):
     def __init__(self, layerName):
         self.layerName = layerName
         self.output = None
+        self.type = 'Layer'
 
     def setOutput(self, output):
         self.output = output
     
     def getOutput(self):
         return self.output
+
+    def setType(self, type):
+        self.type = type
+
+    def getType(self):
+        return self.type
+    
+    def loadManualWeights(self, session, weights):
+        pass

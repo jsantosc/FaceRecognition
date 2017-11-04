@@ -22,3 +22,5 @@ class MaxPoolLayer(l.Layer):
                               name=layerName)
         self.setOutput(self.maxPoolingOp);
         
+        self.setType('MaxPool')
+        

@@ -17,7 +17,10 @@ class PNet(n.Network):
             'prob1', 3)
         self.feed('conv3')
         self.addConvolutionalLayer('conv4-2', 1, 1, 4, 1, 1, addRelu=False)
-
-a = PNet()
-a.createNetwork()
-        
+    
+    def loadManualWeights(self, session, weights):
+        for key,value in weights.items():
+            if key not in self.layers:
+                raise 'Not valid weight'
+            
+            self.layers[key].loadManualWeights(session, value)

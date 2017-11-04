@@ -47,7 +47,7 @@ class Network(object):
 
         with tf.variable_scope(self.name):
             convLayer = cl.ConvolutionalLayer(self, layerName, self.currentOutputNode.getOutput(), kernelWidth, kernelHeight, kernelChannels,
-                            strideHeight, strideWidth, padding, grouping, biased, addRelu, reluType='RELU')
+                            strideHeight, strideWidth, padding, grouping, biased, addRelu, reluType)
             self.layers = dict(self.layers, **{ layerName: convLayer })
             self.currentOutputNode = convLayer
             return self

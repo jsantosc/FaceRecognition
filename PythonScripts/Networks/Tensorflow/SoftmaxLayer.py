@@ -18,3 +18,6 @@ class SoftmaxLayer(l.Layer):
             self.softmax = self.target_exp / self.normalize
 
         self.setOutput(self.softmax)
+
+        self.setType('Softmax')
+        
