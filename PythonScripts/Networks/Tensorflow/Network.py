@@ -71,3 +71,25 @@ class Network(object):
             self.layers = dict(self.layers, **{ layerName: softmax })
             self.currentOutputNode = softmax
             return self
+
+    def run(self, session, input, outputLayerNames):
+        inputDict = {}
+        for inputName, inputLayer in self.inputLayers.items():
+            if inputName not in input:
+                raise 'Network needs the input ' + inputName
+            
+            inputTensorName = inputLayer.getInputName()
+            inputDict = dict(inputDict, **{ inputTensorName: input[inputName] })
+
+        outputTensorNames = []
+        for outputLayerName in outputLayerNames:
+            if outputLayerName not in self.layers:
+                raise 'The layer ' + outputLayerName + ' does not exist'
+            outputTensorNames.append(self.layers[outputLayerName].getOutput().name)
+        
+        results = session.run(tuple(outputTensorNames), feed_dict=inputDict)
+
+        parsedResults = []
+        for i in range(0, len(outputLayerNames)):
+            parsedResults.append({'name': outputLayerNames[i], 'values': results[i]})
+        return parsedResults        

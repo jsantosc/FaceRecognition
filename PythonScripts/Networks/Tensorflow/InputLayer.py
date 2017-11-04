@@ -11,4 +11,7 @@ class InputLayer(l.Layer):
         self.inputTensor = tf.placeholder(tf.float32, (None,None,None,3), layerName)
         self.setOutput(self.inputTensor)
         self.setType('Input')
+
+    def getInputName(self):
+        return self.inputTensor.name
         
