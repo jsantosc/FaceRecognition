@@ -1,0 +1,16 @@
+version: "3.3"
+services:
+  tensorflow:
+    image: tensorflow/tensorflow:latest-py3
+    ports:
+      - "8888:8888"
+    depends_on:
+      - servicebus
+  servicebus:
+    build:
+      context: ./RabbitMQ
+      args:
+        envname: Debug
+    ports:
+      - 5672:5672
+      - 15672:15672

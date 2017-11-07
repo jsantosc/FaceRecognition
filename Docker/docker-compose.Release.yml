@@ -1,0 +1,6 @@
+version: "3.3"
+services:
+  servicebus:
+    build:
+      args:
+        envname: Release

@@ -21,7 +21,30 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "FaceRecognition.Integration
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "PythonScripts", "PythonScripts", "{08D7CC9C-9CA9-4965-B10E-50E894C405E4}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "FaceRecognition.ServiceBus.Bridge", "FaceRecognition.ServiceBus.Bridge\FaceRecognition.ServiceBus.Bridge.csproj", "{5BC60FF8-EC7C-4557-A98A-5981C7745CCD}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "FaceRecognition.ServiceBus.Bridge", "FaceRecognition.ServiceBus.Bridge\FaceRecognition.ServiceBus.Bridge.csproj", "{5BC60FF8-EC7C-4557-A98A-5981C7745CCD}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Docker", "Docker", "{81937AC2-F4A4-433B-BE60-F5EB8E798E27}"
+	ProjectSection(SolutionItems) = preProject
+		Docker\docker-compose.Release.yml = Docker\docker-compose.Release.yml
+		Docker\docker-compose.yml = Docker\docker-compose.yml
+	EndProjectSection
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "RabbitMQ", "RabbitMQ", "{BACDC499-AAD9-411F-8D99-DD9F3E465F4B}"
+	ProjectSection(SolutionItems) = preProject
+		Docker\RabbitMQ\Dockerfile = Docker\RabbitMQ\Dockerfile
+	EndProjectSection
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Debug", "Debug", "{8B584132-8DDC-4724-8686-0A630D94A086}"
+	ProjectSection(SolutionItems) = preProject
+		Docker\RabbitMQ\Debug\definitions.json = Docker\RabbitMQ\Debug\definitions.json
+		Docker\RabbitMQ\Debug\rabbitmq.config = Docker\RabbitMQ\Debug\rabbitmq.config
+	EndProjectSection
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Release", "Release", "{792C58B5-1596-46B2-9DC6-AF8DACF24596}"
+	ProjectSection(SolutionItems) = preProject
+		Docker\RabbitMQ\Release\definitions.json = Docker\RabbitMQ\Release\definitions.json
+		Docker\RabbitMQ\Release\rabbitmq.config = Docker\RabbitMQ\Release\rabbitmq.config
+	EndProjectSection
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -103,6 +126,9 @@ Global
 		{595F0D3A-5EAD-4863-AA8A-F6B51F73E9BA} = {1234AE33-F3B2-4E5F-A473-0EC32CED868A}
 		{0906C72F-F024-4420-872E-B33E7B878AA3} = {1234AE33-F3B2-4E5F-A473-0EC32CED868A}
 		{655BA39D-AB6D-4496-A6BA-67685B3F1E87} = {1234AE33-F3B2-4E5F-A473-0EC32CED868A}
+		{BACDC499-AAD9-411F-8D99-DD9F3E465F4B} = {81937AC2-F4A4-433B-BE60-F5EB8E798E27}
+		{8B584132-8DDC-4724-8686-0A630D94A086} = {BACDC499-AAD9-411F-8D99-DD9F3E465F4B}
+		{792C58B5-1596-46B2-9DC6-AF8DACF24596} = {BACDC499-AAD9-411F-8D99-DD9F3E465F4B}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {7AC84869-3EF8-4F5E-A968-9327771678D8}

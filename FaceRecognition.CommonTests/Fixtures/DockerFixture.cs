@@ -1,5 +1,7 @@
 ﻿using System;
 using System.Diagnostics;
+using System.IO;
+using System.Threading;
 
 namespace FaceRecognition.CommonTests.Fixtures
 {
@@ -29,13 +31,17 @@ namespace FaceRecognition.CommonTests.Fixtures
             var processStartInfo = new ProcessStartInfo
             {
                 FileName = "docker-compose",
-                Arguments = $"-f {ServicePath}/docker-compose.yml build",
-                WorkingDirectory = AppDomain.CurrentDomain.BaseDirectory
+                Arguments = GetArguments(),
+                WorkingDirectory = AppDomain.CurrentDomain.BaseDirectory,
+                RedirectStandardOutput = true,
             };
             AddEnvironmentVariables(processStartInfo);
 
-            var process = Process.Start(processStartInfo);
+            var process = new Process { StartInfo = processStartInfo };
 
+            process.OutputDataReceived += (sender, args) => Console.WriteLine("DOCKER OUTPUT: {0}", args.Data);
+            process.Start();
+            process.BeginOutputReadLine();
             process.WaitForExit();
             if (process.ExitCode != 0)
             {
@@ -58,15 +64,10 @@ namespace FaceRecognition.CommonTests.Fixtures
             {
                 throw new Exception($"There was an error launching docker: {process.ExitCode}");
             }
+            
+            //Waiting to warming up the different services in the containers
+            Thread.Sleep(TimeSpan.FromSeconds(5));
         }
-
-        private void AddEnvironmentVariables(ProcessStartInfo processStartInfo)
-        {
-            processStartInfo.Environment["TAG"] = Tag;
-            processStartInfo.Environment["CONFIGURATION"] = Configuration;
-            processStartInfo.Environment["COMPUTERNAME"] = Environment.MachineName;
-        }
-
         private void StopContainers()
         {
             // Run docker-compose down to stop the containers
@@ -87,6 +88,21 @@ namespace FaceRecognition.CommonTests.Fixtures
             {
                 throw new Exception($"There was an error launching docker: {process.ExitCode}");
             }
+        }
+
+        private void AddEnvironmentVariables(ProcessStartInfo processStartInfo)
+        {
+            processStartInfo.Environment["TAG"] = Tag;
+            processStartInfo.Environment["CONFIGURATION"] = Configuration;
+            processStartInfo.Environment["COMPUTERNAME"] = Environment.MachineName;
+        }
+        private string GetArguments()
+        {
+            if (File.Exists(Path.Combine(ServicePath, $"docker-compose.{Configuration}.yml")))
+            {
+                return $"-f {ServicePath}/docker-compose.yml {ServicePath}/docker-compose.{Configuration}.yml build";
+            }
+            return $"-f {ServicePath}/docker-compose.yml build";
         }
     }
 }

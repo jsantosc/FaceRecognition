@@ -1,6 +1,11 @@
 FROM rabbitmq:3.6.12-management-alpine
-
 MAINTAINER <jsantosc@gmail.com>
 
-ADD rabbitmq.config /etc/rabbitmq/
-ADD definitions.json /etc/rabbitmq/
+ARG envname
+
+RUN echo "Using environment $envname"
+
+COPY ${envname}/rabbitmq.config /etc/rabbitmq/
+COPY ${envname}/definitions.json /etc/rabbitmq/
+
+CMD ["rabbitmq-server"]

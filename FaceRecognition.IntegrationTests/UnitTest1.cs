@@ -13,7 +13,7 @@ namespace FaceRecognition.IntegrationTests
         [Fact]
         public void Test1()
         {
-
+            System.Threading.Thread.Sleep(10000);
         }
     }
 }

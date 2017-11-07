@@ -9,6 +9,15 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <Content Include="..\Docker\RabbitMQ\Debug\definitions.json" Link="Docker\RabbitMQ\Debug\definitions.json">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="..\Docker\RabbitMQ\Release\definitions.json" Link="Docker\RabbitMQ\Release\definitions.json">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+  </ItemGroup>
+
+  <ItemGroup>
     <PackageReference Include="FluentAssertions" Version="4.19.4" />
     <PackageReference Include="Microsoft.NET.Test.Sdk" Version="15.3.0" />
     <PackageReference Include="RabbitMQ.Client" Version="5.0.1" />
@@ -22,7 +31,24 @@
   </ItemGroup>
 
   <ItemGroup>
-    <None Update="Docker\docker-compose.yml">
+    <Folder Include="Docker\RabbitMQ\Debug\" />
+    <Folder Include="Docker\RabbitMQ\Release\" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Include="..\Docker\docker-compose.Release.yml" Link="Docker\docker-compose.Release.yml">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Include="..\Docker\docker-compose.yml" Link="Docker\docker-compose.yml">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Include="..\Docker\RabbitMQ\Debug\rabbitmq.config" Link="Docker\RabbitMQ\Debug\rabbitmq.config">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Include="..\Docker\RabbitMQ\Dockerfile" Link="Docker\RabbitMQ\Dockerfile">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Include="..\Docker\RabbitMQ\Release\rabbitmq.config" Link="Docker\RabbitMQ\Release\rabbitmq.config">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
   </ItemGroup>
