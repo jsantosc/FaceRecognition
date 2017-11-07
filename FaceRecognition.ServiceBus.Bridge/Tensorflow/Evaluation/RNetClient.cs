@@ -1,8 +1,9 @@
-﻿namespace FaceRecognition.ServiceBus.Bridge.Tensorflow.Evaluation
-{
-    public class RNetClient : RpcClient
-    {
+﻿using FaceRecognition.ServiceBus.Bridge.Tensorflow.Evaluation.Dtos;
 
+namespace FaceRecognition.ServiceBus.Bridge.Tensorflow.Evaluation
+{
+    public class RNetClient : RpcClient<RNetRequestDto, RNetResponseDto>
+    {
         private static string _replyQueueName;
 
         public RNetClient(string hostname, int port = 5672, int timeout = 30000)

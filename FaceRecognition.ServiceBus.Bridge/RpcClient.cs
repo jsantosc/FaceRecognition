@@ -1,13 +1,13 @@
 ﻿using System;
 using System.Text;
 using System.Threading.Tasks;
-using System.Xml.XPath;
+using Newtonsoft.Json;
 using RabbitMQ.Client;
 using RabbitMQ.Client.MessagePatterns;
 
 namespace FaceRecognition.ServiceBus.Bridge
 {
-    public abstract class RpcClient : IDisposable
+    public abstract class RpcClient<TSend, TResponse> : IDisposable
     {
         private readonly IConnection _connection;
         private readonly IModel _channel;
@@ -27,7 +27,7 @@ namespace FaceRecognition.ServiceBus.Bridge
             _channel = _connection.CreateModel();
         }
 
-        public string Send(string message)
+        public TResponse Send(TSend message)
         {
             var correlationId = Guid.NewGuid().ToString();
             var props = _channel.CreateBasicProperties();
@@ -35,7 +35,7 @@ namespace FaceRecognition.ServiceBus.Bridge
             props.CorrelationId = correlationId;
             props.ReplyTo = ReplyQueueName;
 
-            var messageBytes = Encoding.UTF8.GetBytes(message);
+            var messageBytes = Encoding.UTF8.GetBytes(JsonConvert.SerializeObject(message));
             _channel.BasicPublish(
                 exchange: Exchange,
                 routingKey: RoutingKey,
@@ -50,13 +50,13 @@ namespace FaceRecognition.ServiceBus.Bridge
                 if (result.BasicProperties.CorrelationId == correlationId)
                 {
                     //_channel.BasicAck(result.DeliveryTag, false);
-                    return Encoding.UTF8.GetString(body);
+                    return JsonConvert.DeserializeObject<TResponse>(Encoding.UTF8.GetString(body));
                 }
             }
             throw new TimeoutException();
         }
 
-        public async Task<string> SendAsync(string message)
+        public async Task<TResponse> SendAsync(TSend message)
         {
             return await Task.Run(() => Send(message)).ConfigureAwait(false);
         }

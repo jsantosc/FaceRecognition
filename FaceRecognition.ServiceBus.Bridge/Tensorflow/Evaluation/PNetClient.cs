@@ -1,6 +1,8 @@
-﻿namespace FaceRecognition.ServiceBus.Bridge.Tensorflow.Evaluation
+﻿using FaceRecognition.ServiceBus.Bridge.Tensorflow.Evaluation.Dtos;
+
+namespace FaceRecognition.ServiceBus.Bridge.Tensorflow.Evaluation
 {
-    public class PNetClient : RpcClient
+    public class PNetClient : RpcClient<PNetRequestDto, PNetResponseDto>
     {
 
         private static string _replyQueueName;
@@ -14,7 +16,7 @@
             }
             ReplyQueueName = _replyQueueName;
             Exchange = RabbitMqExchanges.Tensorflow;
-            RoutingKey = RabbitMqQueues.Tensorflow.Evaluation.RNet;
+            RoutingKey = RabbitMqQueues.Tensorflow.Evaluation.PNet;
         }
     }
 }

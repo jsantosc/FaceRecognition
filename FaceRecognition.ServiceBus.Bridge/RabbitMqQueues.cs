@@ -1,6 +1,6 @@
 ﻿namespace FaceRecognition.ServiceBus.Bridge
 {
-    public static class RabbitMqQueues
+    public static class RabbitMqQueues //TODO: Move to Bootstraper
     {
         public static class Tensorflow
         {
