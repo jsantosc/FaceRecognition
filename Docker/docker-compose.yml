@@ -1,9 +1,12 @@
 version: "3.3"
 services:
   tensorflow:
-    image: tensorflow/tensorflow:latest-py3
-    ports:
-      - "8888:8888"
+    build:
+      context: ./Tensorflow
+      args:
+        envName: Debug
+    environment:
+      - SERVICEBUSHOST=servicebus
     depends_on:
       - servicebus
   servicebus:

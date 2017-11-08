@@ -1,7 +1,7 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio 15
-VisualStudioVersion = 15.0.27004.2006
+VisualStudioVersion = 15.0.27004.2008
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "FaceRecognition.Domain", "FaceRecognition.Domain\FaceRecognition.Domain.csproj", "{400E907F-51EB-4BB9-A3BF-4279F9931645}"
 EndProject
@@ -18,8 +18,6 @@ EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "TensorflowSharpCore", "TensorflowSharpCore\TensorflowSharpCore.csproj", "{BC8CD282-F379-4974-B92E-C2BD3EA081F0}"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "FaceRecognition.IntegrationTests", "FaceRecognition.IntegrationTests\FaceRecognition.IntegrationTests.csproj", "{655BA39D-AB6D-4496-A6BA-67685B3F1E87}"
-EndProject
-Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "PythonScripts", "PythonScripts", "{08D7CC9C-9CA9-4965-B10E-50E894C405E4}"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "FaceRecognition.ServiceBus.Bridge", "FaceRecognition.ServiceBus.Bridge\FaceRecognition.ServiceBus.Bridge.csproj", "{5BC60FF8-EC7C-4557-A98A-5981C7745CCD}"
 EndProject
@@ -44,6 +42,56 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Release", "Release", "{792C
 	ProjectSection(SolutionItems) = preProject
 		Docker\RabbitMQ\Release\definitions.json = Docker\RabbitMQ\Release\definitions.json
 		Docker\RabbitMQ\Release\rabbitmq.config = Docker\RabbitMQ\Release\rabbitmq.config
+	EndProjectSection
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Tensorflow", "Tensorflow", "{30E20B8A-2DB7-4743-A200-C9A76C43A23C}"
+	ProjectSection(SolutionItems) = preProject
+		Docker\Tensorflow\Dockerfile = Docker\Tensorflow\Dockerfile
+	EndProjectSection
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "PythonScripts", "PythonScripts", "{2A238E2D-BAA5-4774-B828-2F8194417B50}"
+	ProjectSection(SolutionItems) = preProject
+		Docker\Tensorflow\PythonScripts\RabbitMqServer.py = Docker\Tensorflow\PythonScripts\RabbitMqServer.py
+		Docker\Tensorflow\PythonScripts\requirements.txt = Docker\Tensorflow\PythonScripts\requirements.txt
+	EndProjectSection
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Detectors", "Detectors", "{77865C70-610B-4E45-99DB-D7372768B34F}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Mtcnn", "Mtcnn", "{3F684A05-3D05-4E96-94C7-231E0A71100D}"
+	ProjectSection(SolutionItems) = preProject
+		Docker\Tensorflow\PythonScripts\Detectors\Mtcnn\__init__.py = Docker\Tensorflow\PythonScripts\Detectors\Mtcnn\__init__.py
+		Docker\Tensorflow\PythonScripts\Detectors\Mtcnn\PNet.py = Docker\Tensorflow\PythonScripts\Detectors\Mtcnn\PNet.py
+	EndProjectSection
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Networks", "Networks", "{A6194F33-146C-4415-B448-CD9FDB546723}"
+	ProjectSection(SolutionItems) = preProject
+		Docker\Tensorflow\PythonScripts\Networks\__init__.py = Docker\Tensorflow\PythonScripts\Networks\__init__.py
+	EndProjectSection
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Tensorflow", "Tensorflow", "{E06840DC-814A-44FB-959A-62DFD1CB4A29}"
+	ProjectSection(SolutionItems) = preProject
+		Docker\Tensorflow\PythonScripts\Networks\Tensorflow\__init__.py = Docker\Tensorflow\PythonScripts\Networks\Tensorflow\__init__.py
+		Docker\Tensorflow\PythonScripts\Networks\Tensorflow\Common.py = Docker\Tensorflow\PythonScripts\Networks\Tensorflow\Common.py
+		Docker\Tensorflow\PythonScripts\Networks\Tensorflow\ConvolutionalLayer.py = Docker\Tensorflow\PythonScripts\Networks\Tensorflow\ConvolutionalLayer.py
+		Docker\Tensorflow\PythonScripts\Networks\Tensorflow\InputLayer.py = Docker\Tensorflow\PythonScripts\Networks\Tensorflow\InputLayer.py
+		Docker\Tensorflow\PythonScripts\Networks\Tensorflow\Layer.py = Docker\Tensorflow\PythonScripts\Networks\Tensorflow\Layer.py
+		Docker\Tensorflow\PythonScripts\Networks\Tensorflow\MaxPoolLayer.py = Docker\Tensorflow\PythonScripts\Networks\Tensorflow\MaxPoolLayer.py
+		Docker\Tensorflow\PythonScripts\Networks\Tensorflow\Network.py = Docker\Tensorflow\PythonScripts\Networks\Tensorflow\Network.py
+		Docker\Tensorflow\PythonScripts\Networks\Tensorflow\SoftmaxLayer.py = Docker\Tensorflow\PythonScripts\Networks\Tensorflow\SoftmaxLayer.py
+	EndProjectSection
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Tests", "Tests", "{4A0915C7-F8B0-419C-9A59-C518CF5F965F}"
+	ProjectSection(SolutionItems) = preProject
+		Docker\Tensorflow\PythonScripts\Tests\CommonTest.py = Docker\Tensorflow\PythonScripts\Tests\CommonTest.py
+		Docker\Tensorflow\PythonScripts\Tests\ONet.json = Docker\Tensorflow\PythonScripts\Tests\ONet.json
+		Docker\Tensorflow\PythonScripts\Tests\PNet.json = Docker\Tensorflow\PythonScripts\Tests\PNet.json
+		Docker\Tensorflow\PythonScripts\Tests\PNetShould.py = Docker\Tensorflow\PythonScripts\Tests\PNetShould.py
+		Docker\Tensorflow\PythonScripts\Tests\RNet.json = Docker\Tensorflow\PythonScripts\Tests\RNet.json
+	EndProjectSection
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Images", "Images", "{C2A426E3-B77D-4DFC-AD8D-1A586AA54BA0}"
+	ProjectSection(SolutionItems) = preProject
+		Docker\Tensorflow\PythonScripts\Tests\Images\image_020_1.jpg = Docker\Tensorflow\PythonScripts\Tests\Images\image_020_1.jpg
 	EndProjectSection
 EndProject
 Global
@@ -129,6 +177,14 @@ Global
 		{BACDC499-AAD9-411F-8D99-DD9F3E465F4B} = {81937AC2-F4A4-433B-BE60-F5EB8E798E27}
 		{8B584132-8DDC-4724-8686-0A630D94A086} = {BACDC499-AAD9-411F-8D99-DD9F3E465F4B}
 		{792C58B5-1596-46B2-9DC6-AF8DACF24596} = {BACDC499-AAD9-411F-8D99-DD9F3E465F4B}
+		{30E20B8A-2DB7-4743-A200-C9A76C43A23C} = {81937AC2-F4A4-433B-BE60-F5EB8E798E27}
+		{2A238E2D-BAA5-4774-B828-2F8194417B50} = {30E20B8A-2DB7-4743-A200-C9A76C43A23C}
+		{77865C70-610B-4E45-99DB-D7372768B34F} = {2A238E2D-BAA5-4774-B828-2F8194417B50}
+		{3F684A05-3D05-4E96-94C7-231E0A71100D} = {77865C70-610B-4E45-99DB-D7372768B34F}
+		{A6194F33-146C-4415-B448-CD9FDB546723} = {2A238E2D-BAA5-4774-B828-2F8194417B50}
+		{E06840DC-814A-44FB-959A-62DFD1CB4A29} = {A6194F33-146C-4415-B448-CD9FDB546723}
+		{4A0915C7-F8B0-419C-9A59-C518CF5F965F} = {2A238E2D-BAA5-4774-B828-2F8194417B50}
+		{C2A426E3-B77D-4DFC-AD8D-1A586AA54BA0} = {4A0915C7-F8B0-419C-9A59-C518CF5F965F}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {7AC84869-3EF8-4F5E-A968-9327771678D8}
