@@ -3,41 +3,52 @@ import asyncio
 import aioamqp
 import json
 import time
+import Dispatchers as dispatchers
+
+def getMessage(message):
+    json = message.decode('utf-8')
+    return json.loads(json)
 
 @asyncio.coroutine
-def on_request(channel, body, envelope, properties):
-    # n = int(body)
-
-    print(" body: " + body.decode('utf-8'))
-    #response = fib(n)
-
+def onONetRequest(channel, body, envelope, properties):
+    message = getMessage(body)
+    respose = dispatchers.onet(message)
     yield from channel.basic_publish(
-        payload=json.dumps({'IsSuccess': True, 'errorMessage': '', 'OutputValues': [{'name':'conv4-1', 'value': [[[[0,1,2,3]]]] }] }),
+        payload= json.dumps(response),
         exchange_name='',
         routing_key=properties.reply_to,
         properties={
             'correlation_id': properties.correlation_id,
         },
     )
-
     yield from channel.basic_client_ack(delivery_tag=envelope.delivery_tag)
 
 @asyncio.coroutine
-def on_request2(channel, body, envelope, properties):
-    # n = int(body)
-
-    print(" body 2: " + body.decode('utf-8'))
-    #response = fib(n)
-
+def onPNetRequest(channel, body, envelope, properties):
+    message = getMessage(body)
+    respose = dispatchers.pnet(message)
     yield from channel.basic_publish(
-        payload=json.dumps({'IsSuccess': True, 'errorMessage': '', 'OutputValues': [{'name':'conv4-1', 'value': [[[[0,1,2,3]]]] }] }),
+        payload = json.dumps(response),
         exchange_name='',
         routing_key=properties.reply_to,
         properties={
             'correlation_id': properties.correlation_id,
         },
     )
+    yield from channel.basic_client_ack(delivery_tag=envelope.delivery_tag)
 
+@asyncio.coroutine
+def onRNetRequest(channel, body, envelope, properties):
+    message = getMessage(body)
+    respose = dispatchers.rnet(message)
+    yield from channel.basic_publish(
+        payload = json.dumps(response),
+        exchange_name='',
+        routing_key=properties.reply_to,
+        properties={
+            'correlation_id': properties.correlation_id,
+        },
+    )
     yield from channel.basic_client_ack(delivery_tag=envelope.delivery_tag)
     
 
@@ -52,8 +63,9 @@ def rpc_server(hostname):
 
     # yield from channel.queue_declare(queue_name='evaluate.onet')
     yield from channel.basic_qos(prefetch_count=1, prefetch_size=0, connection_global=False)
-    yield from channel.basic_consume(on_request, queue_name='evaluate.onet')
-    yield from channel.basic_consume(on_request2, queue_name='evaluate.pnet')
+    yield from channel.basic_consume(onONetRequest, queue_name='evaluate.onet')
+    yield from channel.basic_consume(onPNetRequest, queue_name='evaluate.pnet')
+    yield from channel.basic_consume(onRNetRequest, queue_name='evaluate.rnet')
     print(" [x] Awaiting RPC requests")
 
 def port_type(value):
