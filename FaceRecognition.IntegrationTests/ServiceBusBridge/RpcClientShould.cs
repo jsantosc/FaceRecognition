@@ -1,5 +1,7 @@
 ﻿using System.Linq;
 using System.Threading.Tasks;
+using FaceRecognition.CommonTests.Fixtures;
+using FaceRecognition.IntegrationTests.XUnitConfiguration;
 using FaceRecognition.ServiceBus.Bridge.Tensorflow.Evaluation;
 using FaceRecognition.ServiceBus.Bridge.Tensorflow.Evaluation.Dtos;
 using FluentAssertions;
@@ -7,8 +9,16 @@ using Xunit;
 
 namespace FaceRecognition.IntegrationTests.ServiceBusBridge
 {
+    [Collection(Collections.IntegrationTets)]
     public class RpcClientShould
     {
+        private readonly DockerFixture _dockerFixture;
+
+        public RpcClientShould(DockerFixture dockerFixture)
+        {
+            _dockerFixture = dockerFixture;
+        }
+
         [Fact]
         public async Task GetResponse_WhenAMessageIsSent()
         {

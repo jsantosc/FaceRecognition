@@ -56,14 +56,20 @@ def rpc_server(hostname):
     yield from channel.basic_consume(on_request2, queue_name='evaluate.pnet')
     print(" [x] Awaiting RPC requests")
 
-print('waiting to RabbitMQ to be online')
-time.sleep(10)
+def port_type(value):
+    ivalue = int(value)
+    if ivalue <= 0 or ivalue > 65535:
+        raise argparse.ArgumentTypeError("%s is an invalid port number" % value)
+    return ivalue
 
 parser = argparse.ArgumentParser(description='Run RabbitMQ server to process the different messages from the service bus.')
 parser.add_argument("servicebushost", help="Machine name of the service bus ")
+parser.add_argument("servicebusport", type=port_type, default=5672, help="Machine port where AMPQ service is listening of the service bus ")
 args = parser.parse_args()
 
-print('Connecting to RabbitMQ on ' + args.servicebushost)
+print('Waiting to RabbitMQ to be online')
+time.sleep(1)
+print('Connecting to RabbitMQ on: ' + args.servicebushost)
 
 event_loop = asyncio.get_event_loop()
 event_loop.run_until_complete(rpc_server(args.servicebushost))

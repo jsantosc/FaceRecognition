@@ -1,14 +1,5 @@
 version: "3.3"
 services:
-  tensorflow:
-    build:
-      context: ./Tensorflow
-      args:
-        envName: Debug
-    environment:
-      - SERVICEBUSHOST=servicebus
-    depends_on:
-      - servicebus
   servicebus:
     build:
       context: ./RabbitMQ
@@ -17,3 +8,21 @@ services:
     ports:
       - 5672:5672
       - 15672:15672
+    healthcheck:
+      test: ["CMD", "nc", "-z", "localhost", "5672"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+  tensorflow:
+    build:
+      context: ./Tensorflow
+      args:
+        envName: Debug
+    environment:
+      - SERVICEBUSHOST=servicebus
+      - SERVICEBUSPORT=5672
+    depends_on:
+      - servicebus
+    links: 
+      - servicebus
+    command: "./wait-for-it.sh servicebus:5672 -- python RabbitMqServer.py servicebus 5672"
