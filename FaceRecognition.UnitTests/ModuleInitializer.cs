@@ -2,7 +2,6 @@
 using System.IO;
 using System.Linq;
 using System.Reflection;
-using System.Threading.Tasks;
 using FaceRecognition.Common;
 using FaceRecognition.Common.ConfigFiles;
 using Microsoft.Extensions.Configuration;

@@ -2,7 +2,7 @@
 
 namespace FaceRecognition.ServiceBus.Bridge.Tensorflow.Evaluation
 {
-    public class PNetClient : RpcClient<PNetRequestDto, PNetResponseDto>
+    public class PNetClient : RpcClient<PNetRequestDto, PNetResponseDto>, IPNetClient
     {
 
         private static string _replyQueueName;

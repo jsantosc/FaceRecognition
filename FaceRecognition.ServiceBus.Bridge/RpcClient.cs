@@ -1,13 +1,14 @@
 ﻿using System;
 using System.Text;
 using System.Threading.Tasks;
+using FaceRecognition.Common;
 using Newtonsoft.Json;
 using RabbitMQ.Client;
 using RabbitMQ.Client.MessagePatterns;
 
 namespace FaceRecognition.ServiceBus.Bridge
 {
-    public abstract class RpcClient<TSend, TResponse> : IDisposable
+    public abstract class RpcClient<TSend, TResponse> : IDisposable, IRpcClient<TSend, TResponse>
     {
         private readonly IConnection _connection;
         private readonly IModel _channel;
@@ -35,7 +36,7 @@ namespace FaceRecognition.ServiceBus.Bridge
             props.CorrelationId = correlationId;
             props.ReplyTo = ReplyQueueName;
 
-            var messageBytes = Encoding.UTF8.GetBytes(JsonConvert.SerializeObject(message));
+            var messageBytes = Encoding.UTF8.GetBytes(JsonConvert.SerializeObject(message, Bootstrapper.Instance.DefaultJsonSettings));
             _channel.BasicPublish(
                 exchange: Exchange,
                 routingKey: RoutingKey,

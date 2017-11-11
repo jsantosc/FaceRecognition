@@ -5,6 +5,8 @@ using System.Threading.Tasks;
 using FaceRecognition.Common.ConfigFiles;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
+using Newtonsoft.Json;
+using Newtonsoft.Json.Serialization;
 
 namespace FaceRecognition.Common
 {
@@ -14,7 +16,8 @@ namespace FaceRecognition.Common
 
         private IConfigurationRoot _config;
 
-        public const double DoubleTolerance = 0.0001;
+        public const double DoubleTolerance = 0.0000001;
+        public const float FloatTolerance = 0.0001f;
         public const string MaxDoubleFixedPoint = "0.###################################################################################################################################################################################################################################################################################################################################################";
 
         public static Bootstrapper Instance { get; private set; }
@@ -29,6 +32,11 @@ namespace FaceRecognition.Common
         private Bootstrapper(IConfigurationRoot configurationRoot)
         {
             _config = configurationRoot;
+            DefaultJsonSettings = new JsonSerializerSettings
+            {
+                ContractResolver = new CamelCasePropertyNamesContractResolver()
+            };
+
         }
 
         public static void Build(IConfigurationRoot configurationRoot)
@@ -46,7 +54,7 @@ namespace FaceRecognition.Common
         public string FileServerRoot => _config.GetAppSetting("fileServerRoot");
         public PythonConfiguration Python { get; } = new PythonConfiguration();
         public ILoggerFactory LoggerFactory { get; set; } = new LoggerFactory();
-
+        public JsonSerializerSettings DefaultJsonSettings { get; }
 
         public partial class PythonConfiguration
         {

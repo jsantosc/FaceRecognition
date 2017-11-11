@@ -18,6 +18,10 @@
                 "WaitOnAbnormalExit",
                 "WaitOnNormalExit",
                 "RedirectOutput"
+            ],
+            "args": [
+                "localhost",
+                "5672"
             ]
         },
         {

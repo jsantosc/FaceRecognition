@@ -6,9 +6,9 @@ namespace FaceRecognition.Domain.Helpers
 {
     public static class ImageHelpers
     {
-        public static float[,,,] NormalizeBatch(this NoLohArray3D<float> image)
+        public static float[,,] NormalizeBatch(this NoLohArray3D<float> image)
         {
-            float[,,,] normalizedBatch = new float[1, image.XLength, image.YLength, image.ZLength];
+            float[,,] normalizedBatch = new float[image.XLength, image.YLength, image.ZLength];
 
             Parallel.For(0, image.XLength, Bootstrapper.Instance.MaxDegreeOfParalelism, row =>
             {
@@ -16,7 +16,7 @@ namespace FaceRecognition.Domain.Helpers
                 {
                     for (int channel = 0; channel < image.ZLength; channel++)
                     {
-                        normalizedBatch[0, row, column, channel] = (image[row, column, channel] - 127.5f) * 0.0078125f;
+                        normalizedBatch[row, column, channel] = (image[row, column, channel] - 127.5f) * 0.0078125f;
                     }
                 }
             });

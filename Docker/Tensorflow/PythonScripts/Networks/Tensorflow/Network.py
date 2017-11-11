@@ -91,5 +91,5 @@ class Network(object):
 
         parsedResults = []
         for i in range(0, len(outputLayerNames)):
-            parsedResults.append({'name': outputLayerNames[i], 'values': results[i]})
+            parsedResults.append({'name': outputLayerNames[i], 'value': results[i]})
         return parsedResults        

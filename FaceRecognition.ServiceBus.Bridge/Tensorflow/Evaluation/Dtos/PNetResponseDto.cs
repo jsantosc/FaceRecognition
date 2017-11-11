@@ -1,7 +1,6 @@
 ﻿namespace FaceRecognition.ServiceBus.Bridge.Tensorflow.Evaluation.Dtos
 {
-    public class PNetResponseDto
+    public class PNetResponseDto : BaseResponseDto
     {
-        
     }
 }

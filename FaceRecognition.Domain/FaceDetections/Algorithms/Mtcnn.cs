@@ -49,7 +49,7 @@ namespace FaceRecognition.Domain.FaceDetections.Algorithms
             {
                 int newWidth = (int)Math.Ceiling(image.Width * scale);
                 int newHeight = (int)Math.Ceiling(image.Height * scale);
-                float[,,,] normalizedValues;
+                float[,,] normalizedValues;
 
                 using (var rgba = image.ToColorPixelsArray(newWidth, newHeight))
                 {

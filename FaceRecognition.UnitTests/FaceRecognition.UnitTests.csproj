@@ -24,7 +24,7 @@
 
   <ItemGroup>
     <PackageReference Include="FluentAssertions" Version="4.19.4" />
-    <PackageReference Include="Fody" Version="2.2.0" />
+    <PackageReference Include="Fody" Version="2.2.1" />
     <PackageReference Include="Microsoft.Extensions.Configuration" Version="2.0.0" />
     <PackageReference Include="Microsoft.NET.Test.Sdk" Version="15.5.0" />
     <PackageReference Include="ModuleInit.Fody" Version="1.6.0" />
@@ -45,6 +45,12 @@
   </ItemGroup>
 
   <ItemGroup>
+    <None Update="Domain\Helpers\Resources\image_020_1.jpg">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Update="Domain\Helpers\Resources\NormalizedImageValues.json">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
     <None Update="TensorflowSharpCore\Resources\mtcnn1.json">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
