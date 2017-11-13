@@ -14,15 +14,15 @@ using Xunit;
 
 namespace FaceRecognition.IntegrationTests.ServiceBusBridge.Tensorflow.Evaluation
 {
-    //[Collection(Collections.IntegrationTets)]
+    [Collection(Collections.IntegrationTets)]
     public class PNetClientShould
     {
-        //private readonly DockerFixture _dockerFixture;
+        private readonly DockerFixture _dockerFixture;
 
-        //public PNetClientShould(DockerFixture dockerFixture)
-        //{
-        //    _dockerFixture = dockerFixture;
-        //}
+        public PNetClientShould(DockerFixture dockerFixture)
+        {
+            _dockerFixture = dockerFixture;
+        }
 
         [Fact]
         public async Task GetResponse_WhenAMessageIsSent()
@@ -46,7 +46,7 @@ namespace FaceRecognition.IntegrationTests.ServiceBusBridge.Tensorflow.Evaluatio
             }
             using (var rpcClient = new PNetClient("localhost"))
             {
-                var response = await rpcClient.SendAsync(new PNetRequestDto(normalizedValues, LoadWeightsMode.FromJson, "D:/Proyectos/GitHub_JSantosC/FaceRecognition/FaceRecognition/Docker/Tensorflow/PythonScripts/Tests/PNet.json")).ConfigureAwait(false);
+                var response = await rpcClient.SendAsync(new PNetRequestDto(normalizedValues, LoadWeightsMode.FromJson, "/facerec/Tests/PNet.json")).ConfigureAwait(false);
                 response.IsSuccess.Should().BeTrue();
                 response.ErrorMessage.Should().BeEmpty();
                 response.OutputValues.Count().Should().Be(expectedPNetResponse.OutputValues.Count());
